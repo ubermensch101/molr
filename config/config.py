@@ -1,15 +1,19 @@
-from geo_tol import geo_tols
+# from geo_tol import geo_tols
+import json
+import os
 
 class Config:
     def __init__(self, gcp_path = ""):
-        self.setup_details = self.get_details()
-        if gcp_path != "":
-            self.setup_details["gcp_path"] = gcp_path
-    
-    def get_details(self):
-        cur_dict = {}
-        cur_dict["geo_tols"] = geo_tols
-        return cur_dict
+        modules = ["setup","psql","georef","fbfs","pos","val"]
+        self.setup_details = self.get_details(modules)
+        
+    def get_details(self, modules):
+        details = {}
+        for key in modules:
+            dir_path = os.path.dirname(__file__)
+            setup_file = os.path.join(dir_path,f"{key}.json")
+            with open(setup_file,'r') as file:
+                details[key] = json.loads(file.read())
 
     def get_config(self):
         return self.setup_details
