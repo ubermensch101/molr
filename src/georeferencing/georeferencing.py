@@ -6,9 +6,8 @@ def georeferencer():
     config = Config()
     
     pgconn = PGConn(config.setup_details["psql"])
-    conn = pgconn.connection()
     
-    return Georeferencer(config,conn)
+    return Georeferencer(config,pgconn)
 
 class Georeferencer:
     def __init__(self,config,psql_conn):
