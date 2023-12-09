@@ -4,7 +4,7 @@ import os
 
 class Config:
     def __init__(self, gcp_path = ""):
-        modules = ["setup","psql","georef","fbfs","pos","val"]
+        modules = ["setup","psql","georef","fbfs","pos","val","data"]
         self.setup_details = self.get_details(modules)
         
     def get_details(self, modules):
@@ -13,8 +13,10 @@ class Config:
             dir_path = os.path.dirname(__file__)
             setup_file = os.path.join(dir_path,f"{key}.json")
             with open(setup_file,'r') as file:
-                details[key] = json.loads(file.read())
-
+                data = json.loads(file.read())
+                details[key] = data
+        return details
+        
     def get_config(self):
         return self.setup_details
 

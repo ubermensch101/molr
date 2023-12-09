@@ -1,5 +1,7 @@
 README.md
 setup.py
+config/__init__.py
+config/config.py
 setup_dir.egg-info/PKG-INFO
 setup_dir.egg-info/SOURCES.txt
 setup_dir.egg-info/dependency_links.txt

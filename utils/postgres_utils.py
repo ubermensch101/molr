@@ -2,7 +2,7 @@ import psycopg2
 
 class PGConn:
     def __init__(self, config):
-        self.setup_details = config["psql"]
+        self.details = config.setup_details["psql"]
         self.conn = None
 
     def connection(self):
@@ -11,12 +11,13 @@ class PGConn:
 
         """
         if self.conn is None:
-            conn = psycopg2.connect(dbname=self.setup_details["database"],
-                                    host=self.setup_details["host"],
-                                    port=self.setup_details["port"],
-                                    user=self.setup_details["user"],
-                                    password=self.setup_details["password"])
+            conn = psycopg2.connect(dbname=self.details["database"],
+                                    host=self.details["host"],
+                                    port=self.details["port"],
+                                    user=self.details["user"],
+                                    password=self.details["password"])
             self.conn = conn
+            self.conn.autocommit = True
             
         return self.conn
 
@@ -25,8 +26,35 @@ class PGConn:
         the PGConn object is garbage collected by Python runtime.
         """
         print(self.conn)
-        self.conn.close()
+        if self.conn is not None:
+            self.conn.close()
         self.conn = None
         
-def check_schema_exists():
-    pass
+def check_schema_exists(psql_conn, schema_name):
+    sql_query=f"""
+        select 
+            schema_name 
+        from 
+            information_schema.schemata 
+        where 
+            schema_name='{schema_name}'
+    """
+    with psql_conn.cursor() as curr:
+        curr.execute(sql_query)
+        schema_exists = curr.fetchone()
+    if schema_exists is not None:
+        return True
+    else:
+        return False
+
+def create_schema(psql_conn, schema_name, delete_original = False):
+    comment_schema_drop="--"
+    if delete_original and check_schema_exists(psql_conn, schema_name):
+            comment_schema_drop=""
+        
+    sql_query=f"""
+        {comment_schema_drop} drop schema {schema_name} cascade;
+        create schema if not exists {schema_name};
+    """
+    with psql_conn.cursor() as curr:
+        curr.execute(sql_query)
