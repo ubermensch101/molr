@@ -1,26 +1,24 @@
 from config import *
 from utils import *
+import argparse
 
-def analyse_gcps():
-    config = Config()
-    
-    pgconn = PGConn(config.setup_details["psql"])
-    conn = pgconn.connection()
-    
-    return Analyse_Gcps(config,conn)
+def analyse_gcps(config, psql_conn):
+    pass
 
-class Analyse_Gcps:
-    def __init__(self, config, psql_conn):
-        self.config = config
-        self.psql_conn = psql_conn
-        pass
-
-    def analyse(self):
-        pass
-
-    def run(self):
-        pass
-    
 if __name__=="__main__":
-    ag = analyse_gcps()
-    ag.run()
+    parser = argparse.ArgumentParser(description="Description for parser")
+
+    parser.add_argument("-v", "--village", help="Village name",
+                        required=True, default="")
+    
+    argument = parser.parse_args()
+    path_to_data = argument.path
+    village = argument.village
+        
+    config = Config()
+    pgconn = PGConn(config)
+    
+    if village!="":
+        config.setup_details['setup']['village'] = village
+    
+    analyse_gcps(config, pgconn)

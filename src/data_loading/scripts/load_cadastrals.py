@@ -4,11 +4,11 @@ import argparse
 from utils import *
 from config import *
 
-def load_cadastrals(psql_conn, path_to_cadastrals, village_name):
+def load_cadastrals(config, psql_conn, path_to_cadastrals):
     for root, dirs, files in os.walk(path_to_cadastrals, topdown=True):
         for file in files:
             file_location = os.path.join(root, file)
-            table_name = "cadastrals"
+            table_name = config.setup_details['data']['cadastrals_table']
             if file.endswith(".shp"):
                 ogrinfo_cmd = [
                     'ogrinfo',
@@ -25,7 +25,7 @@ def load_cadastrals(psql_conn, path_to_cadastrals, village_name):
                         file_location,
                         '-lco', 'OVERWRITE=YES',
                         '-lco', 'GEOMETRY_NAME=geom',
-                        '-lco', 'schema=' + village_name, 
+                        '-lco', 'schema=' + config.setup_details['setup']['village'], 
                         '-lco', 'SPATIAL_INDEX=GIST',
                         '-lco', 'FID=gid',
                         '-nlt', 'PROMOTE_TO_MULTI',
@@ -48,10 +48,11 @@ if __name__=="__main__":
     
     if path_to_data=="" or village=="":
         print("ERROR")
+        exit()
+        
     config = Config()
     pgconn = PGConn(config)
     
-    # try:
-    load_cadastrals(pgconn,path_to_data,village)
-    # except:
-    #     print("ERROR 2")
+    config.setup_details['setup']['village'] = village
+    
+    load_cadastrals(config, pgconn,path_to_data,village)

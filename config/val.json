@@ -1,3 +1,5 @@
 {
-    "tol1": "0.1"
+    "gcp_label": "asno",
+    "survey_no_label": "survey_no",
+    "snap_tol": "0.01"
 }

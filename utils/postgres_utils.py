@@ -58,3 +58,93 @@ def create_schema(psql_conn, schema_name, delete_original = False):
     """
     with psql_conn.cursor() as curr:
         curr.execute(sql_query)
+        
+def add_column(psql_conn, schema, table, column, type):
+    sql = f'''
+        alter table {schema}.{table}
+        drop column if exists {column};
+        alter table {schema}.{table}
+        add column {column} {type};
+    '''
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+    
+def check_column_exists(psql_conn, schema, table, column):
+    sql = f'''
+    SELECT EXISTS (SELECT 1 
+    FROM information_schema.columns 
+    WHERE 
+        table_schema='{schema}' 
+    AND 
+        table_name='{table}' 
+    AND 
+        column_name='{column}');
+    '''
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        a = curr.fetchall()
+    return a[0][0]
+
+def find_dtype(psql_conn, schema, table, column):
+    sql = f'''
+        SELECT data_type
+        FROM information_schema.columns
+        WHERE table_schema = '{schema}' AND 
+        table_name = '{table}' AND
+        column_name = '{column}';
+    '''
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        res = curr.fetchall()
+    return res[0][0]
+
+
+def find_srid(psql_conn, schema, table, column):
+    sql = f'''
+        select find_srid('{schema}','{table}','{column}')
+    '''
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        res = curr.fetchall()
+    return res[0][0]
+
+
+def table_exist(psql_conn, schema, table):
+    sql = f'''
+        SELECT EXISTS (
+            SELECT 
+            FROM 
+                information_schema.tables 
+            WHERE  
+                table_schema = '{schema}'
+            AND    
+                table_name   = '{table}'
+        );
+    '''
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        res = curr.fetchall()
+    if res[0][0]:
+        return True
+    else:
+        return False
+    
+def number_of_entries(psql_conn, schema, table):
+    sql = f'''
+    select 
+        count(gid)
+    from 
+        {schema}.{table}
+    '''
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        res = curr.fetchall()
+    return int(res[0][0])
+
+def copy_table(psql_conn, input, output):
+    sql = f'''
+        drop table if exists {output};
+        create table {output} as table {input};
+    '''
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)

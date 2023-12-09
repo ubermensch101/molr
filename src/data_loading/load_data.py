@@ -22,36 +22,42 @@ class DataLoading:
         self.config = config
         self.psql_conn = psql_conn
         self.path = self.config.setup_details["data"]["path"]
+        self.toggle = self.config.setup_details["data"]["toggle"]
         if self.path == "":
             print("Data path not set")
             exit()
-        self.toggle = self.config.setup_details["data"]["toggle"]
-
+        if self.toggle == "":
+            print("Toggle not given")
+            exit()
+        self.toggle = int(self.toggle)
+        
     def run(self):
         for (root,dirs,files) in os.walk(self.path, topdown=True):
             
             if root[len(self.path):].count(os.sep)!=self.toggle:
                 continue
                 
-            village = "_".join(os.path.basename(root).split('_')[1:])
+            village = ("_".join(os.path.basename(root).split('_')[1:])).lower()
             vincode = os.path.basename(root).split('_')[0]
             print("Processing village",village,", vincode",vincode)
+            
+            self.config.setup_details['setup']['village'] = village
             
             create_schema(self.psql_conn.connection(), village, delete_original= False)
                 
             for dir in dirs:
                 if dir.startswith("09"):
-                    pass
+                    load_survey_plots(self.config,self.psql_conn, os.path.join(root,dir))
                     
                 elif dir.startswith("14"):
-                    pass
+                    load_gcps(self.config,self.psql_conn, os.path.join(root,dir))
                     
                 elif dir.startswith("15"):
-                    pass
+                    load_akarbandh(self.config,self.psql_conn, os.path.join(root,dir))
                     
                 elif dir.startswith("16"):
-                    load_cadastrals(self.psql_conn, os.path.join(root,dir), village)
-                    
+                    load_cadastrals(self.config,self.psql_conn, os.path.join(root,dir))
+
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for parser")

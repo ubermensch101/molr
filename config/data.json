@@ -1,4 +1,10 @@
 {
     "path":"",
-    "toggle":"0"
+    "toggle":"0",
+    "gcp_table":"gcp",
+    "survey_map_table":"survey_original",
+    "akarbandh_table":"akarbandh",
+    "survey_map_akarbandh_col":"akarbandh_area",
+    "cadastrals_table":"cadastrals",
+    "survey_processed":"survey_original_processed"
 }

@@ -1,15 +1,18 @@
 from config import *
 from utils import *
+from scripts import *
+import argparse
 
-def datavalidation():
+def datavalidation(village = ""):
     config = Config()
     
-    pgconn = PGConn(config.setup_details["psql"])
-    conn = pgconn.connection()
+    pgconn = PGConn(config)
+    if village != "":    
+        config.setup_details['setup']['village'] = village
     
-    return DataValidation(config,conn)
+    return DataValidationAndPreparation(config,pgconn)
 
-class DataValidation:
+class DataValidationAndPreparation:
     def __init__(self, config, psql_conn):
         self.config = config
         self.psql_conn = psql_conn
@@ -17,19 +20,36 @@ class DataValidation:
 
     def analyse(self):
         # Prepare analysis summary: what is missing, what is duplicate, non-alphanumeric, etc
-        pass
+        
+        analyse_survey_plots(self.config,self.psql_conn)
+        analyse_cadastrals(self.config,self.psql_conn)
+        analyse_gcps(self.config,self.psql_conn)
+        analyse_akarbandh(self.config,self.psql_conn)
 
     def clean_data(self):
         # wrapper for clean data
-        pass
+        cleaner = Data_Cleaner(self.config,self.psql_conn)
+        cleaner.run()
 
-    def correct_data(self):
+    def prepare_survey_map(self):
         # wrapper for correct data
-        pass
+        survey_map_prep = Survey_Map_Processer(self.config,self.psql_conn)
+        survey_map_prep.run()
 
     def run(self):
-        pass
+        self.clean_data()
+        self.analyse()
+        self.prepare_survey_map()
     
-if __name__=="__main__":
-    dv = datavalidation()
-    dv.run()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Description for my parser")
+
+    parser.add_argument("-v", "--village", help="Village name",
+                        required=False, default="deolanabk")
+
+    argument = parser.parse_args()
+    
+    village = argument.village
+
+    datacleaner = datavalidation(village)
+    datacleaner.run()
