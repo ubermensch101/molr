@@ -1,6 +1,8 @@
 {
     "path":"",
     "toggle":"0",
+    "farmplots_path": "",
+    "farmplots_table": "farmplots",
     "gcp_table":"gcp",
     "survey_map_table":"survey_original",
     "akarbandh_table":"akarbandh",
