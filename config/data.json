@@ -10,7 +10,6 @@
     "akarbandh_table":"akarbandh",
     "survey_map_akarbandh_col":"akarbandh_area",
     "cadastrals_table":"cadastrals",
-    "farmplots_table":"farmplots",
     "survey_processed":"survey_original_processed",
     "survey_jitter_table":"survey_jitter",
     "survey_georeferenced_table":"survey_georeferenced"
