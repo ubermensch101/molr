@@ -1,2 +1,2 @@
-from scripts.analysis import *
-from scripts.preparation import *
+from .analysis import *
+from .preparation import *

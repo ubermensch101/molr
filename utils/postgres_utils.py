@@ -148,3 +148,24 @@ def copy_table(psql_conn, input, output):
     '''
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql)
+        
+def update_srid(psql_conn, input_table, column, srid):
+    sql = f'''
+        alter table {input_table}
+        alter column {column} 
+        type geometry(Geometry,{srid})
+        using st_transform({column},{srid});
+    '''
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        
+def rename_column(psql_conn, input_schema, input_table_name, original, final):
+    if not check_column_exists(psql_conn, input_schema,input_table_name,original):
+        return
+    
+    sql = f'''
+        alter table {input_schema}.{input_table_name}
+        rename column {original} to {final};
+    '''
+    with psql_conn.cursor() as curr:
+        curr.execute(sql)

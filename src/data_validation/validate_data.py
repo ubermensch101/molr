@@ -16,7 +16,6 @@ class DataValidationAndPreparation:
     def __init__(self, config, psql_conn):
         self.config = config
         self.psql_conn = psql_conn
-        pass
 
     def analyse(self):
         # Prepare analysis summary: what is missing, what is duplicate, non-alphanumeric, etc

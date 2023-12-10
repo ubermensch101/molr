@@ -16,11 +16,9 @@ class Farm_Graph:
     def __init__(self,config,psql_conn):
         self.config = config
         self.psql_conn = psql_conn
+        self.farmplots = self.config.setup_details["data"]["farmplots_table"]
         
-    def load(self):
-        pass
-        
-    def clean(self):
+    def clean(self, farmplots):
         pass
     
     def midline(self):
@@ -30,6 +28,8 @@ class Farm_Graph:
         pass
     
     def run(self):
+        copy_table(self.psql_conn, self.farmplots, self.config.setup_details["data"]["original_farmplots_table"])
+        self.clean(self.farmplots)
         pass
 
 if __name__=="__main__":

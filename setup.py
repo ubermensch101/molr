@@ -1,7 +1,6 @@
 from setuptools import setup, find_packages
-
 setup(
-    name='setup_dir',
+    name='molr',
     version='1.0',
     packages=find_packages()
 )

@@ -1,2 +1,2 @@
-from scripts.preparation.clean_data import *
-from scripts.preparation.prepare_survey_map import *
+from .clean_data import *
+from .prepare_survey_map import *
