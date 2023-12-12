@@ -76,9 +76,18 @@ class Georeferencer:
 
     def label_gcps(self):
         pass
-    
+
+
     def georef_using_gcps(self):
-        pass
+        tri = Trijunctions(self.config, self.psql_conn)
+        tri.run()
+        gcp_label_toggle = self.config.setup_details['georef']['gcp_label_toggle']
+        if gcp_label_toggle == 'True':
+            self.create_gcp_map_using_labels()
+        elif gcp_label_toggle == 'False':
+            self.create_gcp_map()
+
+        
     
     def report(self):
         pass

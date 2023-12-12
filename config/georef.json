@@ -2,5 +2,11 @@
     "tol1": "0.1",
     "bnd1": "((-1, 1), (1, 10), (1, 10), (-80, 80), (-80, 80))",
     "bnd2": "((-0.1, 0.1), (1, 1.1), (1, 1.1), (-80, 80), (-80, 80))",
-    "survey_shifted": "survey_shifted"
+    "survey_shifted": "survey_shifted",
+    "survey_shifted_vertices":"survey_shifted_vertices",
+    "survey_jitter_vertices":"survey_jitter_vertices",
+    "gcp_label_toggle": "True",
+    "gcp_map": "gcp_map",
+    "delimiter": "-|," ,
+    "gcp_label_column":"asno"
 }
