@@ -45,7 +45,7 @@ class DataLoading:
             
             self.config.setup_details['setup']['village'] = village
             
-            create_schema(self.psql_conn.connection(), village, delete_original= False)
+            create_schema(self.psql_conn, village, delete_original= False)
                 
             for dir in dirs:
                 if dir.startswith("09"):

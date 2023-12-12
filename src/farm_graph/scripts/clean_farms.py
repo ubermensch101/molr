@@ -106,8 +106,9 @@ class Farmplot_Cleaner:
             curr.execute(sql_query)
 
     def run(self):
+        copy_table(self.psql_conn, self.village+'.'+self.farmplots, self.village+'.'+self.farmplots_dup)
         update_srid(self.psql_conn, self.village+'.'+self.farmplots_dup, 'geom', 32643)
-        add_column(self.psql_conn, self.village, self.farmplots_dup, 'gid','serial')
+        add_column(self.psql_conn, self.village+'.'+self.farmplots_dup, 'gid','serial')
         rename_column(self.psql_conn,  self.village, self.farmplots_dup, 'descriptio','description')
         self.remove_trees(self.village+'.'+self.farmplots_dup)
         self.dedup_geom(self.village, self.farmplots_dup, self.farmplots)
@@ -116,7 +117,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Description for my parser")
 
     parser.add_argument("-v", "--village", help="Village name",
-                        required=False, default="deolanabk")
+                        required=False, default="")
 
     argument = parser.parse_args()
     

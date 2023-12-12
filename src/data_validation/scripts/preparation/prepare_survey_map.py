@@ -102,7 +102,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for my parser")
 
     parser.add_argument("-v", "--village", help="Village name",
-                        required=False, default="deolanabk")
+                        required=False, default="")
 
     argument = parser.parse_args()
     

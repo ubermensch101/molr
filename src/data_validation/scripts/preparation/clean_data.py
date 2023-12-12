@@ -29,8 +29,8 @@ class Data_Cleaner:
         srid = find_srid(self.psql_conn, self.village,self.gcp,'geom')
         if srid != 32643:
             print(f"GCP SRID error, found {srid} instead of 32643")
-        add_column(self.psql_conn, self.village, self.gcp, 'gid','serial')
-        add_column(self.psql_conn, self.village, self.gcp, 'geom2','geometry(Point,32643)')
+        add_column(self.psql_conn, self.village+'.'+self.gcp, 'gid','serial')
+        add_column(self.psql_conn, self.village+'.'+self.gcp, 'geom2','geometry(Point,32643)')
         sql = f'''
             update {self.village}.{self.gcp} as p
             set geom2 = (select (st_dump(st_force2D(geom))).geom  from {self.village}.{self.gcp} where gid = p.gid);
@@ -54,8 +54,8 @@ class Data_Cleaner:
         '''
         with self.psql_conn.connection().cursor() as curr:
             curr.execute(sql)
-        add_column(self.psql_conn,self.village,self.survey,'gid','serial')
-        add_column(self.psql_conn,self.village,self.survey,'geom2','geometry(Multipolygon,32643)')
+        add_column(self.psql_conn,self.village+'.'+self.survey,'gid','serial')
+        add_column(self.psql_conn,self.village+'.'+self.survey,'geom2','geometry(Multipolygon,32643)')
         sql = f'''
             update {self.village}.{self.survey}
             set geom2 =  st_force2D(st_multi(geom));
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Description for my parser")
 
     parser.add_argument("-v", "--village", help="Village name",
-                        required=False, default="deolanabk")
+                        required=False, default="")
 
     argument = parser.parse_args()
     

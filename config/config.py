@@ -4,7 +4,7 @@ import os
 
 class Config:
     def __init__(self, gcp_path = ""):
-        modules = ["setup","psql","georef","fbfs","pos","val","data"]
+        modules = ["setup","psql","georef","fbfs","pos","val","data","fp"]
         self.setup_details = self.get_details(modules)
         
     def get_details(self, modules):

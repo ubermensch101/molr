@@ -39,7 +39,7 @@ def check_schema_exists(psql_conn, schema_name):
         where 
             schema_name='{schema_name}'
     """
-    with psql_conn.cursor() as curr:
+    with psql_conn.connection().cursor() as curr:
         curr.execute(sql_query)
         schema_exists = curr.fetchone()
     if schema_exists is not None:
@@ -56,14 +56,14 @@ def create_schema(psql_conn, schema_name, delete_original = False):
         {comment_schema_drop} drop schema {schema_name} cascade;
         create schema if not exists {schema_name};
     """
-    with psql_conn.cursor() as curr:
+    with psql_conn.connection().cursor() as curr:
         curr.execute(sql_query)
         
-def add_column(psql_conn, schema, table, column, type):
+def add_column(psql_conn, table, column, type):
     sql = f'''
-        alter table {schema}.{table}
+        alter table {table}
         drop column if exists {column};
-        alter table {schema}.{table}
+        alter table {table}
         add column {column} {type};
     '''
     with psql_conn.connection().cursor() as curr:
