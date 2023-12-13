@@ -1,3 +1,22 @@
 {
-    "tol1": "0.1"
+    "tol1": "0.1",
+    "shifted_faces":"shifted_faces",
+    "farm_faces":"farmplots_midline_polygons",
+    "farmplots":"farmplots",
+    "void_percent_threshold": 0.95,
+    "possession_1":"possession_1",
+    "possession_2":"possession_2",
+    "possession_3":"possession_3",
+    "possession_4":"possession_4",
+    "possession_5":"possession_5",
+    "ownership":"farm_ownership",
+    "ownership_2":"farm_ownership_2",
+    "ownership_3":"farm_ownership_3",
+    "ownership_4":"farm_ownership_4",
+    "farm_superpoly_topo":"_farm_superpoly",
+    "edge":"edge",
+    "topo":"_shifted_topo",
+    "possession_final":"possession_final",
+    "input_table":"input_table_name",
+    "output_table":"output_table_name"
 }
