@@ -6,6 +6,7 @@ def analyse_akarbandh(config, psql_conn):
     survey = config.setup_details['data']['survey_map_table']
     akarbandh = config.setup_details['data']['akarbandh_table']
     village = config.setup_details['setup']['village']
+    survey_no = config.setup_details['val']['survey_no_label']
     
     print("\n----------Akarbandh----------")
     if table_exist(psql_conn, village, akarbandh):
@@ -15,7 +16,7 @@ def analyse_akarbandh(config, psql_conn):
         return 
     
     sql = f'''
-        select count(survey_no),sum(area) from {village}.{akarbandh};
+        select count({survey_no}),sum(area) from {village}.{akarbandh};
     '''
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql)
@@ -25,7 +26,7 @@ def analyse_akarbandh(config, psql_conn):
     
     sql = f'''
         select 
-            (survey_no)
+            ({survey_no})
         from 
             {village}.{akarbandh};
     '''
@@ -41,13 +42,13 @@ def analyse_akarbandh(config, psql_conn):
     
     sql = f'''
         select
-            (survey_no :: int)
+            ({survey_no} :: int)
         from
             {village}.{survey}
         where
-            survey_no ~ '^[0-9\.]+$'
+            {survey_no} ~ '^[0-9\.]+$'
         order by
-            survey_no;     
+            {survey_no};     
     '''
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql)
@@ -71,10 +72,9 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for parser")
 
     parser.add_argument("-v", "--village", help="Village name",
-                        required=True, default="")
+                        required=False, default="")
     
     argument = parser.parse_args()
-    path_to_data = argument.path
     village = argument.village
         
     config = Config()

@@ -15,7 +15,7 @@ def convert_row(row):
         return None
 
 
-def load_akarbandh_from_excel(psql_conn, path, village, table_name):
+def load_akarbandh_from_excel(psql_conn, path, village, table_name, survey_no):
     df = pd.read_excel (path, usecols='A, B, C', dtype=str)
     df = df.apply(convert_row, axis=1).dropna()
     conn = psql_conn.connection()
@@ -25,7 +25,7 @@ def load_akarbandh_from_excel(psql_conn, path, village, table_name):
         drop table if exists {village}.{table_name};
         create table {village}.{table_name} (
             gid serial, 
-            survey_no varchar(20), 
+            {survey_no} varchar(20), 
             area float
         );
     """
@@ -38,12 +38,12 @@ def load_akarbandh_from_excel(psql_conn, path, village, table_name):
     UPDATE {village}.{table_name} as p
         SET area = b.area
         FROM (
-            SELECT survey_no, sum(area) AS area
+            SELECT {survey_no}, sum(area) AS area
             FROM {village}.{table_name}
             where area>0
-            GROUP BY survey_no
+            GROUP BY {survey_no}
         ) AS b
-        WHERE b.survey_no = p.survey_no
+        WHERE b.{survey_no} = p.{survey_no}
     '''
     with conn.cursor() as curr:
         curr.execute(sql)
@@ -53,7 +53,7 @@ def load_akarbandh_from_excel(psql_conn, path, village, table_name):
         (SELECT gid
         FROM 
             (SELECT gid,
-            ROW_NUMBER() OVER( PARTITION BY survey_no
+            ROW_NUMBER() OVER( PARTITION BY {survey_no}
             ORDER BY  gid ) AS row_num
             FROM {village}.{table_name} ) t
             WHERE t.row_num > 1 );
@@ -63,14 +63,15 @@ def load_akarbandh_from_excel(psql_conn, path, village, table_name):
     
 
 def load_akarbandh(config, psql_conn, path_to_akarbandh):
+    survey_no_label =  config.setup_details['val']['survey_no_label']
     for root, dirs, files in os.walk(path_to_akarbandh, topdown=True):
         for file in files:
             file_location = os.path.join(root, file)
             table_name = config.setup_details['data']['akarbandh_table']
-            survey_original =  config.setup_details['data']['survey_map_table']
+            # survey_original =  config.setup_details['data']['survey_map_table']
             village_name = config.setup_details['setup']['village']
             if file.endswith(".xlsx"):
-                load_akarbandh_from_excel(psql_conn, file_location,village_name,table_name)
+                load_akarbandh_from_excel(psql_conn, file_location,village_name,table_name, survey_no_label)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for parser")

@@ -12,5 +12,7 @@
     "cadastrals_table":"cadastrals",
     "survey_processed":"survey_original_processed",
     "survey_jitter_table":"survey_jitter",
-    "survey_georeferenced_table":"survey_georeferenced"
+    "survey_georeferenced_table":"survey_georeferenced",
+    "shifted_faces_table":"shifted_faces",
+    "possession_table":"possession_final"
 }

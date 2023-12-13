@@ -1,5 +1,13 @@
 {
     "gcp_label": "asno",
     "survey_no_label": "survey_no",
-    "snap_tol": "0.01"
+    "snap_tol": "0.01",
+    "intersection_thresh": "0.7",
+    "report_path": "",
+    "report_table": "report",
+    "summary_table": "summary",
+    "validation_thresh": "5",
+    "farm_rating_validation_thresh": "95",
+    "farm_intersection_thresh": "60",
+    "akarbandh_validity_thresh": "15"
 }

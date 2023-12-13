@@ -167,5 +167,17 @@ def rename_column(psql_conn, input_schema, input_table_name, original, final):
         alter table {input_schema}.{input_table_name}
         rename column {original} to {final};
     '''
-    with psql_conn.cursor() as curr:
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        
+def add_gist_index(psql_conn, schema, table, column):
+    sql = f"""
+        create index if not exists
+            {schema}_{table}_{column}_index 
+        on 
+            {schema}.{table}
+        using 
+            GIST({column});
+    """
+    with psql_conn.connection().cursor() as curr:
         curr.execute(sql)

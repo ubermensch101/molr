@@ -59,10 +59,9 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for parser")
 
     parser.add_argument("-v", "--village", help="Village name",
-                        required=True, default="")
+                        required=False, default="")
     
     argument = parser.parse_args()
-    path_to_data = argument.path
     village = argument.village
         
     config = Config()

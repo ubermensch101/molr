@@ -8,7 +8,7 @@ def validate_farmplots(config,psql_conn):
     gcps = village + '.' + config.setup_details['data']['gcp_table']
     farm_topo = village+config.setup_details['fp']['farm_topo_suffix']
     
-    avg_varp = add_varp(psql_conn, farmplots)
+    avg_varp = add_varp(psql_conn, village, config.setup_details['data']['farmplots_table'], 'varp')
     num_overlap = num_of_overlapping_farmplots(psql_conn, farmplots)
     rms_error = check_rms_error(psql_conn, farm_topo, gcps)
     
