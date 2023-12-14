@@ -1,13 +1,14 @@
 from utils import *
 from config import *
 import json
+import argparse
 
-def trijunctions():
+def trijunctions(gcp_label_toggle):
     config = Config()
     pgconn = PGConn(config)
-    gcp_label_toggle = input('Toogle gcps on ? (True/False): ')
     obj = Trijunctions(config,pgconn)
-    obj.option = gcp_label_toggle
+    if gcp_label_toggle != "":
+        obj.option = gcp_label_toggle
     return obj
 
 class Trijunctions:
@@ -165,5 +166,12 @@ class Trijunctions:
 
 
 if __name__=="__main__":
-    trijun = trijunctions()
+    parser = argparse.ArgumentParser(description="Description for parser")
+
+    parser.add_argument("-gcp_toggle", "--gcp_label_toggle", help="GCP label column exists?",
+                        required=False, default="")
+    argument = parser.parse_args()
+    gcp_label_toggle = argument.gcp_label_toggle
+    trijun = trijunctions(gcp_label_toggle)
     trijun.run()
+    

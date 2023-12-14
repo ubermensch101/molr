@@ -173,9 +173,11 @@ def clip_farmplots(psql_conn, schema, input, output, reference):
         curr.execute(sql)
 
 
-def excess_area_at_boundary(psql_conn, schema,  parameters, input, reference):
+def excess_area_at_boundary(psql_conn, schema,  parameters, input, reference , ref_schema = None):
+    if ref_schema is None:
+        ref_schema = schema
     input_table = schema + "." + input
-    reference_table = schema + "." + reference    
+    reference_table = ref_schema + "." + reference    
     sql = f''' 
         with center as (
         select st_centroid(
@@ -223,9 +225,11 @@ def excess_area_at_boundary(psql_conn, schema,  parameters, input, reference):
         return float(str(a))
     
 
-def excess_area_without_parameters(psql_conn, schema, input, reference):
+def excess_area_without_parameters(psql_conn, schema, input, reference, ref_schema = None):
+    if ref_schema is None:
+        ref_schema = schema
     input_table = schema + "." + input
-    reference_table = schema + "." + reference
+    reference_table = ref_schema + "." + reference
     sql = f'''
     select sum(
             least(
@@ -257,9 +261,11 @@ def excess_area_without_parameters(psql_conn, schema, input, reference):
         return float(str(a))
     
 
-def get_distortion(psql_conn, schema, input, reference):
+def get_distortion(psql_conn, schema, input, reference, ref_schema= None):
+    if ref_schema is None:
+        ref_schema = schema
     input_table = schema + "." + input
-    reference_table = schema + "." + reference
+    reference_table = ref_schema + "." + reference
     sql = f'''
         select
             stddev(abs(st_area(a.geom)/st_area(b.geom)))

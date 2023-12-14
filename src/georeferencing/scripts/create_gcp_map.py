@@ -1,5 +1,12 @@
 import re
+from utils import *
+from config import *
+import json
 
+def gcp_map():
+    config = Config()
+    pgconn = PGConn(config)
+    return GCP_map(config,pgconn)
 
 class GCP_map:
     def __init__(self, config , psql_conn ):
@@ -158,3 +165,8 @@ class GCP_map:
         elif self.gcp_label_toggle == "False":
             used_map_vertices = self.survey_jitter_vertices
             self.create_gcp_map(used_map_vertices, self.gcp, self.gcp_map)
+
+
+if __name__=="__main__":
+    mapgcp = gcp_map()
+    mapgcp.run()

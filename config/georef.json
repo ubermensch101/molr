@@ -8,5 +8,8 @@
     "gcp_label_toggle": "True",
     "gcp_map": "gcp_map",
     "delimiter": "-|," ,
-    "gcp_label_column":"asno"
+    "gcp_label_column":"asno",
+    "temp_georeferencing_schema" : "_temp_georeferencing",
+    "polynomial": "survey_jitter_degree_",
+    "gcp_report": "gcp_report"
 }
