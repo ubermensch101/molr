@@ -3,7 +3,7 @@ from utils import *
 from scripts import *
 import argparse
 
-def create_super_poly(config, input_table, output_table):
+def create_super_poly(config, psql_conn, input_table, output_table):
 
         """Input table -- farm graph polygons
         Output table --- super polygons table name(will be created in the function)"""
@@ -67,7 +67,7 @@ def create_super_poly(config, input_table, output_table):
             alter table {output_table}
             add column gid serial;
         '''
-        with pgconn.cursor() as curr:
+        with psql_conn.connection().cursor() as curr:
             curr.execute(sql_query)
 
 if __name__=="__main__":
@@ -90,4 +90,4 @@ if __name__=="__main__":
     if village!="":
         config.setup_details['setup']['village'] = village
     
-    create_super_poly(config, input_table, output_table)
+    create_super_poly(config, pgconn, input_table, output_table)

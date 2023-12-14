@@ -13,9 +13,9 @@
     "ownership_2":"farm_ownership_2",
     "ownership_3":"farm_ownership_3",
     "ownership_4":"farm_ownership_4",
-    "farm_superpoly_topo":"_farm_superpoly",
+    "farm_superpoly_topo":"farm_superpoly",
     "edge":"edge",
-    "topo":"_shifted_topo",
+    "topo":"shifted_topo",
     "possession_final":"possession_final",
     "input_table":"input_table_name",
     "output_table":"output_table_name"

@@ -70,7 +70,7 @@ class Type_Assigner:
                 ELSE 'farm'
             END;    
         '''
-        with self.pgconn.cursor() as curr:
+        with self.psql_conn.connection().cursor() as curr:
             curr.execute(sql_query)
 
     def run(self):
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Description for my parser")
 
     parser.add_argument("-v", "--village", help="Village name",
-                        required=False, default="deolanabk")
+                        required=False, default="")
 
     argument = parser.parse_args()
     
