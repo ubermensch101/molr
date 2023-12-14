@@ -5,6 +5,7 @@ from utils import *
 from config import *
 
 def load_gcps(config, psql_conn, path_to_gcps):
+    srid = config.setup_details['setup']['srid']
     for root, dirs, files in os.walk(path_to_gcps, topdown=True):
         for file in files:
             file_location = os.path.join(root, file)
@@ -18,7 +19,7 @@ def load_gcps(config, psql_conn, path_to_gcps):
                 output = subprocess.check_output(ogrinfo_cmd, universal_newlines=True)
                 if 'Point' in output:
                     ogr2ogr_cmd = [
-                        'ogr2ogr','-f','PostgreSQL',
+                        'ogr2ogr','-f','PostgreSQL','-t_srs',f'EPSG:{srid}',
                         'PG:dbname=' + psql_conn.details["database"] + ' host=' +
                             psql_conn.details["host"] + ' user=' + psql_conn.details["user"] +
                             ' password=' + psql_conn.details["password"],
@@ -28,7 +29,7 @@ def load_gcps(config, psql_conn, path_to_gcps):
                         '-lco', 'schema=' + config.setup_details['setup']['village'], 
                         '-lco', 'SPATIAL_INDEX=GIST',
                         '-lco', 'FID=gid',
-                        '-nlt', 'PROMOTE_TO_MULTI',
+                        '-dim', '2',
                         '-nln', table_name
                     ]
                     subprocess.run(ogr2ogr_cmd)

@@ -85,6 +85,24 @@ def check_column_exists(psql_conn, schema, table, column):
         a = curr.fetchall()
     return a[0][0]
 
+def find_column_geom_type(psql_conn, schema, table, column):
+    sql = f'''
+        select 
+            type
+        from 
+            geometry_columns 
+        where
+            f_table_schema = '{schema}' 
+            and 
+            f_table_name = '{table}' 
+            and 
+            f_geometry_column = '{column}';
+    '''
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        res = curr.fetchall()
+    return res[0][0]
+
 def find_dtype(psql_conn, schema, table, column):
     sql = f'''
         SELECT data_type
@@ -106,7 +124,7 @@ def find_srid(psql_conn, schema, table, column):
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql)
         res = curr.fetchall()
-    return res[0][0]
+    return int(res[0][0])
 
 
 def table_exist(psql_conn, schema, table):

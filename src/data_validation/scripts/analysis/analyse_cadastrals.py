@@ -14,11 +14,16 @@ def analyse_cadastrals(config, psql_conn):
         return
     print("Total number of Cadastrals:", number_of_entries(psql_conn, village, cadastrals))
     
+    if check_column_exists(psql_conn,village,cadastrals,'pin'):
+        comment = ""
+    else:
+        comment = "--"
+    
     sql = f'''
         select 
             sum(st_area(geom)) 
         from 
-            {village}.cadastrals
+            {village}.{cadastrals};
     '''
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql)
@@ -30,23 +35,24 @@ def analyse_cadastrals(config, psql_conn):
         select 
             count(*)
         from 
-            {village}.cadastrals
-        where
-            pin is NULL;
+            {village}.{cadastrals}
+        {comment}where
+        {comment}    pin is NULL
+        ;
     '''
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql)
         res = curr.fetchall()
     count = int(res[0][0])
     print("Number of NULL cadastrals:", count)
-    
     sql = f'''
         select 
             sum(st_area(geom)) 
         from 
-            {village}.cadastrals
-        where
-            pin is not null;
+            {village}.{cadastrals}
+        {comment}where
+        {comment}    pin is not null
+        ;
     '''
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql)

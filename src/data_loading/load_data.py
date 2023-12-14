@@ -27,7 +27,7 @@ class DataLoading:
         
     def run(self):
         if self.path == "":
-            print("Data path not set")
+            print("Data path not set for data")
             return
         if self.toggle == "":
             print("Toggle not given")
@@ -80,7 +80,7 @@ class FarmplotLoading:
         
     def run(self):
         if self.path == "":
-            print("Data path not set")
+            print("Data path not set for farmplots")
             return
         table_name = self.config.setup_details["data"]["farmplots_table"]
         for (root,dirs,files) in os.walk(self.path, topdown=True):

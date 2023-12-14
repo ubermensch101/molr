@@ -21,7 +21,7 @@ def add_report(config, psql_conn):
             {survey_no} varchar(100),
             valid bool,
             akarbandh_validity bool,
-            akarbandh_area float,
+            {akarbandh_col} float,
             georeferenced_area float,
             refined_area float,
             possession_area float,
