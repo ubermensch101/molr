@@ -106,3 +106,26 @@ def polygonize(psql_conn, input_table, output_table):
     '''
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql_query)
+
+def narrow_face_creator(config, psql_conn):
+    village = config.setup_details['setup']['village']
+    shifted_faces = config.setup_details['pos']['shifted_faces']
+    narrow_faces = config.setup_details['pos']['narrow_faces']
+    sql_query=f"""
+        drop table if exists {village}.{narrow_faces};
+        create table {village}.{narrow_faces} as
+        
+        select geom                
+        from
+            {village}.{shifted_faces}
+        where
+            st_area(geom)>1
+            and
+            st_perimeter(geom) * 
+                st_perimeter(geom) /
+                st_area(geom) > 55
+        ;
+    """
+    with psql_conn.connection().cursor() as curs:
+        curs.execute(sql_query)
+    psql_conn.connection().commit()

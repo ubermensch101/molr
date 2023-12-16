@@ -18,5 +18,7 @@
     "topo":"shifted_topo",
     "possession_final":"possession_final",
     "input_table":"input_table_name",
-    "output_table":"output_table_name"
+    "output_table":"output_table_name",
+    "narrow_faces":"narrow_faces_test",
+    "temporary_possession":"temporary_possession"
 }

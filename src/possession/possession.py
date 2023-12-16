@@ -40,7 +40,7 @@ class Possession:
         self.possession_3 = self.config.setup_details['pos']['possession_3']
         self.possession_4 = self.config.setup_details['pos']['possession_4']
         self.possession_5 = self.config.setup_details['pos']['possession_5']
-
+        self.temp_possession = self.config.setup_details['pos']['temporary_possession']
         self.possession_final = self.config.setup_details['pos']['possession_final']
         self.shifted_topo = self.config.setup_details['pos']['topo']
         
@@ -49,6 +49,7 @@ class Possession:
         possession_2 = f'{self.village}.{self.possession_2}'
         possession_3 = f'{self.village}.{self.possession_3}'
         possession_4 = f'{self.village}.{self.possession_4}'
+        temporary_possession = f'{self.village}.{self.temp_possession}'
         # possession_5 = f'{self.village}.{self.possession_5}'
 
         farm_plot_ownership = f'{self.village}.{self.farm_ownership}'
@@ -57,10 +58,10 @@ class Possession:
         farm_plot_ownership_4 = f'{self.village}.{self.farm_ownership_4}'
 
         # farm_possession_poly = f'{self.village}.{self.possession_final}'
-
-        create_super_poly(self.config, self.psql_conn, farm_plot_ownership, possession_1)
-        add_column(self.psql_conn, farm_plot_ownership, 'gid', 'serial')
-        break_voids(self.config, self.psql_conn, farm_plot_ownership, farm_plot_ownership_2)
+        cut_narrow_faces(self.config, self.psql_conn, farm_plot_ownership, temporary_possession)
+        create_super_poly(self.config, self.psql_conn, temporary_possession, possession_1)
+        add_column(self.psql_conn, temporary_possession, 'gid', 'serial')
+        break_voids(self.config, self.psql_conn, temporary_possession, farm_plot_ownership_2)
         create_super_poly(self.config, self.psql_conn, farm_plot_ownership_2, possession_2)
         break_voids(self.config, self.psql_conn, farm_plot_ownership_2, farm_plot_ownership_3)
         create_super_poly(self.config, self.psql_conn, farm_plot_ownership_3, possession_3)
@@ -79,6 +80,7 @@ class Possession:
     def run(self):
         farm_faces = f'{self.village}.{self.farm_faces}'
         shifted_faces = f'{self.village}.{self.shifted_faces}'
+        narrow_face_creator(self.config, self.psql_conn)
         add_column(self.psql_conn, shifted_faces, 'gid', 'serial')
         
         sql_query = f"""
@@ -99,12 +101,12 @@ class Possession:
 
         self.assigning_farm_vs_void()
         self.cut_farms()
-        topo_name = f'{self.village}_{self.shifted_topo}'
-        # polygonize_topo(self.psql_conn, self.village, topo_name, self.possession_final) # this was original
-
+        topo_name = f'{self.village}_{self.farm_topo}'
+        polygonize_topo(self.psql_conn, self.village, topo_name, self.possession_final)
         # polygonize(f'{farm_superpoly_topo}.edge',farm_possession_poly)
-        farm_superpoly_topo = f'{self.village}_{self.farm_topo}.edge'
-        polygonize(self.psql_conn, farm_superpoly_topo, self.possession_final)
+        # using original polygonize cause output differed significantly
+        # farm_superpoly_topo = f'{self.village}_{self.farm_topo}.edge'
+        # polygonize(self.psql_conn, farm_superpoly_topo, self.possession_final)
     
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for my parser")
