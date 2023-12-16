@@ -125,13 +125,13 @@ class Data_Cleaner:
             {map} 
         set geom = 
         (select 
-            st_multi(
+            st_force2d(st_multi(
                 st_snap(
                     geom,
                     (select st_collect(geom) from {map}), 
                     {self.snap_tol}
                 )
-            )
+            ))
         );
         '''
         with self.psql_conn.connection().cursor() as curr:

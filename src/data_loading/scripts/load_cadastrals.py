@@ -57,4 +57,4 @@ if __name__=="__main__":
     
     config.setup_details['setup']['village'] = village
     
-    load_cadastrals(config, pgconn,path_to_data,village)
+    load_cadastrals(config, pgconn,path_to_data)

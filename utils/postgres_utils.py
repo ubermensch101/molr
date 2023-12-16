@@ -199,3 +199,4 @@ def add_gist_index(psql_conn, schema, table, column):
     """
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql)
+        
