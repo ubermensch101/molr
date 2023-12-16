@@ -26,7 +26,7 @@ def fit_with_excess_area_at_boundary(psql_conn, schema, input, output, reference
     create_union(psql_conn, schema, input, input+"_union")
     farmplots_clipped = "farmplots_clipped"
     clip_farmplots(psql_conn, schema, reference, farmplots_clipped, input+"_union")
-    result = minimize(excess_area_at_boundary, [0, 1, 1, 0, 0], args=(psql_conn, schema, input+"_union", farmplots_clipped, temp),bounds=bounds)
+    result = minimize(excess_area_at_boundary, [0, 1, 1, 0, 0], args=(psql_conn, schema, input+"_union", farmplots_clipped),bounds=bounds)
     print(f"Resulting Transformation Parameters: {result.x}")
     update_rotation(psql_conn, schema, input, output, result.x[0])
     update_scale(psql_conn, schema, output, temp, result.x[1], result.x[2])
@@ -73,7 +73,7 @@ def excess_area(parameters, psql_conn, schema, input, reference, temporary):
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql)
     
-    val = calculate_a_minus_b(psql_conn, schema, reference, temporary) + calculate_a_minus_b(schema, temporary, reference)
+    val = calculate_a_minus_b(psql_conn, schema, reference, temporary) + calculate_a_minus_b(psql_conn, schema, temporary, reference)
     return val
 
 
@@ -173,7 +173,7 @@ def clip_farmplots(psql_conn, schema, input, output, reference):
         curr.execute(sql)
 
 
-def excess_area_at_boundary(psql_conn, schema,  parameters, input, reference , ref_schema = None):
+def excess_area_at_boundary(parameters, psql_conn, schema,   input, reference , ref_schema = None):
     if ref_schema is None:
         ref_schema = schema
     input_table = schema + "." + input

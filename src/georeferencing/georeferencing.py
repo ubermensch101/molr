@@ -2,10 +2,14 @@ from utils import *
 from config import *
 from scripts import *
 import json
+from src.data_validation.scripts.analysis.analyse_gcps import *
 
-def georeferencer():
+def georeferencer(village, gcp_label_toggle):
     config = Config()
-    
+    if village != "":
+        config.setup_details['setup']['village'] = village
+    if gcp_label_toggle != "":
+        config.setup_details['georef']['gcp_label_toggle'] = gcp_label_toggle
     pgconn = PGConn(config)
     
     return Georeferencer(config,pgconn)
@@ -18,6 +22,7 @@ class Georeferencer:
         self.schema_name = self.config.setup_details['setup']['village']
         self.farmplots = self.config.setup_details['data']['farmplots_table']
         self.survey_georeferenced = self.config.setup_details['data']['survey_georeferenced_table']
+        self.gcp_report = self.config.setup_details['georef']['gcp_report']
         self.final_gcps_used = []
         self.final_output = [""]
 
@@ -26,60 +31,7 @@ class Georeferencer:
         jitrun = Georeference_without_gcps(self.config,self.psql_conn)
         jitrun.run()
     
-    def fix_gaps(self):
-        sql = '''
-        drop table if exists {schema_name}.filling_narrow_sections;
-        create table {schema_name}.filling_narrow_sections
-        as
-        select 
-            st_difference(
-                st_makepolygon(
-                    st_exteriorring(
-                        st_buffer(
-                            st_buffer(
-                                st_union(geom),
-                                10
-                            ),
-                            -10
-                        )
-                    )
-                ),
-                st_union(geom)
-            ) as geom 
-        from {input_table};
-            
-        drop table if exists {schema_name}.new_narrow_sections;
-        create table {schema_name}.new_narrow_sections 
-        as 
-        select 
-            st_buffer(
-                st_buffer(
-                    (st_dump(st_polygonize(geom))).geom,
-                    -0.2),
-                    0.2
-                ) 
-        as geom from {schema_name}.filling_narrow_sections;
-            
-        delete from {schema_name}.new_narrow_sections 
-        where st_area(geom)<100; 
-            
-        alter table {schema_name}.new_narrow_sections 
-        add column if not exists id serial;
-            
-        insert into {input_table} (survey_no,geom)
-        select ('NN' || id ),st_multi(geom) from {schema_name}.new_narrow_sections;
-
-        alter table {input_table}
-        drop column if exists gid;
-            
-        alter table {input_table}
-        add column gid serial;
-            
-        
-        '''.format(input_table=self.survey_jitter ,
-                   schema_name=self.schema_name)
-        with self.psql_conn.connection().cursor() as curr:
-            curr.execute(sql)
+    
 
 
     def georef_using_gcps(self):
@@ -107,18 +59,18 @@ class Georeferencer:
             proj = math.inf
         print("\n-----Georeferencing Using Spline-----")
         spline = 0
-        try:
-            spl = Spline(self.config, self.psql_conn)
-            spline, gcps_used_spline = spl.run()
-        except:
-            spline = math.inf
+
+        spl = Spline(self.config, self.psql_conn)
+        spline, gcps_used_spline = spl.run()
         
-        xs_area_jitter = excess_area_at_boundary(self.psql_conn, self.schema_name, [0, 1, 1, 0, 0], self.survey_jitter, self.farmplots)
+            
+        
+        xs_area_jitter = excess_area_at_boundary([0, 1, 1, 0, 0], self.psql_conn, self.schema_name,  self.survey_jitter, self.farmplots)
         
         excess_areas = [
             [xs_area_jitter, self.survey_jitter, "Jitter", gcps_used_jitter],
-            [deg_1, poly1.survey_jitter_degree, "Polynomial 1", gcps_used_polynomial_1],
-            [deg_2, poly2.survey_jitter_degree, "Polynomial 2", gcps_used_polynomial_2],
+            [deg_1, poly1.output, "Polynomial 1", gcps_used_polynomial_1],
+            [deg_2, poly2.output, "Polynomial 2", gcps_used_polynomial_2],
             [proj, projective.survey_projective, "Projective", gcps_used_projective],
             [spline, spl.survey_spline, "Spline", gcps_used_spline]
         ]
@@ -139,8 +91,8 @@ class Georeferencer:
         self.final_output[0] = excess_area_percentage[0][2]
         
         
-        self.copy_table(excess_area_percentage[0][1], self.survey_georeferenced)
-        self.validate_geom(self.survey_georeferenced)
+        copy_table(self.psql_conn,self.schema_name +"." + excess_area_percentage[0][1], self.schema_name +"." + self.survey_georeferenced)
+        validate_geom(self.psql_conn, self.schema_name, self.survey_georeferenced)
 
         print("Final Georeferenced Output Selected :-", excess_area_percentage[0][2],
      
@@ -149,14 +101,27 @@ class Georeferencer:
         
     
     def report(self):
-        pass
+        flag = check_column_exists(self.psql_conn, self.schema_name, self.gcp_report, "Parseable/Non_Parseable")
+        if flag==False:
+            analyse_gcps(self.config, self.psql_conn )
+        gcp_trijunction_match(self.config, self.psql_conn)
     
     def run(self):
         self.jitter()
-        self.fix_gaps()
+        fix_gaps(self.psql_conn, self.schema_name, self.survey_jitter)
         self.georef_using_gcps()
+        self.report()
     
 if __name__=="__main__":
-    georef = georeferencer()
+    parser = argparse.ArgumentParser(description="Description for parser")
+
+    parser.add_argument("-v", "--village", help="Village",
+                        required=False, default="")
+    parser.add_argument("-gcp_toggle", "--gcp_label_toggle", help="GCP label column exists?",
+                        required=False, default="")
+    argument = parser.parse_args()
+    gcp_toggle = argument.gcp_label_toggle
+    village = argument.village
+    georef = georeferencer(village , gcp_toggle)
     georef.run()
     

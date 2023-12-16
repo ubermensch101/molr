@@ -5,10 +5,12 @@ import argparse
 
 def trijunctions(gcp_label_toggle):
     config = Config()
+    if village != "":
+        config.setup_details['setup']['village'] = village
+    if gcp_label_toggle != "":
+        config.setup_details['georef']['gcp_label_toggle'] = gcp_label_toggle
     pgconn = PGConn(config)
     obj = Trijunctions(config,pgconn)
-    if gcp_label_toggle != "":
-        obj.option = gcp_label_toggle
     return obj
 
 class Trijunctions:
@@ -24,7 +26,7 @@ class Trijunctions:
 
     def find_tri_junctions(self, input, topo_name, output):
         self.add_village_boundary(input)
-        self.create_topo(topo_name, input)
+        create_topo(self.psql_conn, self.schema_name, topo_name, input)
         input_topo_schema = topo_name
         output_table = self.schema_name + "." + output
         sql = f'''
@@ -167,11 +169,13 @@ class Trijunctions:
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for parser")
-
+    parser.add_argument("-v", "--village", help="Village",
+                        required=False, default="")
     parser.add_argument("-gcp_toggle", "--gcp_label_toggle", help="GCP label column exists?",
                         required=False, default="")
     argument = parser.parse_args()
+    village = argument.village
     gcp_label_toggle = argument.gcp_label_toggle
-    trijun = trijunctions(gcp_label_toggle)
+    trijun = trijunctions(village, gcp_label_toggle)
     trijun.run()
     

@@ -2,9 +2,14 @@ from utils import *
 from config import *
 import json
 import ast
+import argparse
 
-def georeference_withput_gcps():
+def georeference_withput_gcps(village , gcp_label_toggle):
     config = Config()
+    if village != "":
+        config.setup_details['setup']['village'] = village
+    if gcp_label_toggle != "":
+        config.setup_details['georef']['gcp_label_toggle'] = gcp_label_toggle
     pgconn = PGConn(config)
     return Georeference_without_gcps(config,pgconn)
 
@@ -24,6 +29,8 @@ class Georeference_without_gcps:
 
     def shift_a_to_b(self, a, b, output):
         output_table= self.schema_name + "." + output
+        a = self.schema_name + "." + a
+        b = self.schema_name + "." + b
         sql = f'''
             drop table if exists {output_table};
             
@@ -54,5 +61,14 @@ class Georeference_without_gcps:
         self.create_survey_jitter(bnd1, bnd2)
 
 if __name__=="__main__":
-    georef = georeference_withput_gcps()
+    parser = argparse.ArgumentParser(description="Description for parser")
+
+    parser.add_argument("-v", "--village", help="Village",
+                        required=False, default="")
+    parser.add_argument("-gcp_toggle", "--gcp_label_toggle", help="GCP label column exists?",
+                        required=False, default="")
+    argument = parser.parse_args()
+    gcp_toggle = argument.gcp_label_toggle
+    village = argument.village
+    georef = georeference_withput_gcps(village , gcp_toggle)
     georef.run()

@@ -2,9 +2,11 @@ from config import *
 from utils import *
 import argparse
 import pandas as pd
+import re
 
 
 def analyse_gcps(config, psql_conn):
+    delimiter = "-"
     schema = config.setup_details['setup']['village']
     gcp = config.setup_details['data']['gcp_table']
     gcp_label_column = config.setup_details['georef']['gcp_label_column']
@@ -22,12 +24,35 @@ def analyse_gcps(config, psql_conn):
         '''
         with psql_conn.connection().cursor() as curr:
             curr.execute(sql)
+        sql = f'''
+            alter table {gcp_report_table}
+            add column if not exists Parseable varchar(100); 
+        '''
+        with psql_conn.connection().cursor() as curr:
+            curr.execute(sql)
         sql = f''' select {gcp_label_column} from {gcp_table}; '''
         with psql_conn.connection().cursor() as curr:
             curr.execute(sql)
             gcp_labels = curr.fetchall()
         for gcp_label in gcp_labels:
-            pass
+            survey_nos = re.split(delimiter,gcp_label[0])
+            flag = "Yes"
+            for survey_no in survey_nos:
+                try:
+                    a = int(survey_no)
+                    flag = "Yes"
+                except:
+                    if survey_no in ['vb' , 'rv', 'rd', 'g']:
+                        flag = "Yes"
+                    else:
+                        flag = "No"
+            sql = f'''
+                update {gcp_report_table}
+                set Parseable = '{flag}'
+                where {gcp_label_column} = '{gcp_label[0]}' ;
+            '''
+            with psql_conn.connection().cursor() as curr:
+                curr.execute(sql)
         
 
 

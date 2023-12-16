@@ -8,8 +8,12 @@ import math
 from config import *
 import argparse
 
-def projective():
+def projective(village, gcp_label_toggle):
     config = Config()
+    if village != "":
+        config.setup_details['setup']['village'] = village
+    if gcp_label_toggle != "":
+        config.setup_details['georef']['gcp_label_toggle'] = gcp_label_toggle
     pgconn = PGConn(config)
     return Projective(config,pgconn)
 
@@ -23,7 +27,7 @@ class Projective:
         self.gcp = self.config.setup_details['data']['gcp_table']
         self.survey_processed = self.config.setup_details['data']['survey_processed']
         self.farmplots = self.config.setup_details['data']['farmplots_table']
-        self.gcp_map = self.config.setup_deatils['georef']['gcp_map']
+        self.gcp_map = self.config.setup_details['georef']['gcp_map']
         self.gcp_label_toggle = self.config.setup_details['georef']['gcp_label_toggle']
         self.survey_projective = self.config.setup_details['georef']['projective']
         self.survey_jitter = self.config.setup_details['data']['survey_jitter_table']
@@ -33,7 +37,7 @@ class Projective:
     def survey_jitter_projective(self, input, gcpmap, output):
         input_table = self.schema_name + "." + input
         gcp_map = self.schema_name + "." + gcpmap
-        original_output_name = self.schema_name + "." + output
+        original_output_name =  output
         output_table = self.temp_georeferencing_schema+"."+output
         sql = f'''
             select st_x(geom),st_y(geom) from {gcp_map}
@@ -47,8 +51,7 @@ class Projective:
             target_points_all = curr.fetchall()
         if len(source_points_all) < 4:
             print(f"Cannot perform projective with {len(source_points)} GCPs")
-            exit
-
+            return math.inf,[]
         sql = f'''
             select gid, (st_dumppoints(geom)).path, 
             st_x((st_dumppoints(geom)).geom), st_y((st_dumppoints(geom)).geom)
@@ -109,7 +112,7 @@ class Projective:
                     select gid from {gcp}
                     where st_intersects(st_point({x},{y},32643),st_buffer(geom,0.5));
                 '''.format(
-                    gcp=self.gcp,
+                    gcp=self.schema_name + "." + self.gcp,
                     x=j[0],
                     y=j[1]
                 )
@@ -135,7 +138,7 @@ class Projective:
                 select gid from {gcp}
                 where st_intersects(st_point({x},{y},32643),st_buffer(geom,0.5));
             '''.format(
-                gcp=self.gcp,
+                gcp=self.schema_name + "." +self.gcp,
                 x=j[0],
                 y=j[1]
             )
@@ -156,15 +159,17 @@ class Projective:
         elif self.gcp_label_toggle == "False":
             used_map = self.survey_jitter
         output = self.survey_projective
-        return self.survey_jitter_projective(used_map, self.gcp_map, output)
-        
+        a,b = self.survey_jitter_projective(used_map, self.gcp_map, output)
+        return a ,b 
+    
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for parser")
     parser.add_argument("-gcp_toggle", "--gcp_label_toggle", help="GCP label column exists?",
                         required=False, default="")
+    parser.add_argument("-v", "--village", help="Village",
+                        required=False, default="")
     argument = parser.parse_args()
     gcp_label_toggle = argument.gcp_label_toggle
-    proj = projective()
-    if gcp_label_toggle != "":
-        proj.gcp_label_toggle = gcp_label_toggle
+    village = argument.village
+    proj = projective(village, gcp_label_toggle)
     excess_area, gcps_used = proj.run()

@@ -9,8 +9,12 @@ from utils import *
 from  .georef_utils import *
 import argparse
 
-def polynomial():
+def polynomial(village, gcp_label_toggle):
     config = Config()
+    if village != "":
+        config.setup_details['setup']['village'] = village
+    if gcp_label_toggle != "":
+        config.setup_details['georef']['gcp_label_toggle'] = gcp_label_toggle
     pgconn = PGConn(config)
     return Polynomial(config,pgconn)
 
@@ -25,7 +29,7 @@ class Polynomial:
         self.gcp = self.config.setup_details['data']['gcp_table']
         self.survey_processed = self.config.setup_details['data']['survey_processed']
         self.farmplots = self.config.setup_details['data']['farmplots_table']
-        self.gcp_map = self.config.setup_deatils['georef']['gcp_map']
+        self.gcp_map = self.config.setup_details['georef']['gcp_map']
         self.gcp_label_toggle = self.config.setup_details['georef']['gcp_label_toggle']
         self.survey_jitter_degree = self.config.setup_details['georef']['polynomial']
         self.survey_jitter = self.config.setup_details['data']['survey_jitter_table']
@@ -72,7 +76,7 @@ class Polynomial:
                     select gid from {gcp}
                     where st_intersects(st_point({x},{y},32643),st_buffer(geom,0.5));
                 '''.format(
-                    gcp=self.gcp,
+                    gcp=self.schema_name + "." + self.gcp,
                     x=j[0],
                     y=j[1]
                 )
@@ -100,11 +104,11 @@ class Polynomial:
                 select gid from {gcp}
                 where st_intersects(st_point({x},{y},32643),st_buffer(geom,0.5));
             '''.format(
-                gcp=self.gcp,
+                gcp=self.schema_name +"." + self.gcp,
                 x=j[0],
                 y=j[1]
             )
-            with self.psql_conn.cursor() as curr:
+            with self.psql_conn.connection().cursor() as curr:
                 curr.execute(sql)
                 gcp_gid = curr.fetchall()
                 g.append(gcp_gid[0][0])
@@ -161,8 +165,8 @@ class Polynomial:
             used_map = self.survey_shifted
         elif self.gcp_label_toggle == "False":
             used_map = self.survey_jitter
-        output = self.survey_jitter_degree + degree
-        return self.survey_jitter_higher_order(used_map, self.gcp_map, output, degree)
+        self.output = self.survey_jitter_degree + str(degree)
+        return self.survey_jitter_higher_order(used_map, self.gcp_map, self.output, degree)
         
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for parser")
@@ -170,11 +174,11 @@ if __name__=="__main__":
                         required=False, default="")
     parser.add_argument("-d", "--degree", help="Degree of polynomial function",
                         required=False, default="1")
-    
+    parser.add_argument("-v", "--village", help="Village",
+                        required=False, default="")
     argument = parser.parse_args()
     gcp_label_toggle = argument.gcp_label_toggle
-    poly = polynomial()
-    if gcp_label_toggle != "":
-        poly.gcp_label_toggle = gcp_label_toggle
+    village = argument.village
+    poly = polynomial(village, gcp_label_toggle)
     degree = int(argument.degree)
     excess_area, gcps_used = poly.run(degree)

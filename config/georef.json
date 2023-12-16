@@ -11,5 +11,7 @@
     "gcp_label_column":"asno",
     "temp_georeferencing_schema" : "_temp_georeferencing",
     "polynomial": "survey_jitter_degree_",
+    "projective": "survey_jitter_projective",
+    "spline": "survey_jitter_spline",
     "gcp_report": "gcp_report"
 }

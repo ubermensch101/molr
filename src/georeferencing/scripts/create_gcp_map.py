@@ -2,9 +2,14 @@ import re
 from utils import *
 from config import *
 import json
+import argparse
 
-def gcp_map():
+def gcp_map(village, gcp_label_toggle):
     config = Config()
+    if village != "":
+        config.setup_details['setup']['village'] = village
+    if gcp_label_toggle != "":
+        config.setup_details['georef']['gcp_label_toggle'] = gcp_label_toggle
     pgconn = PGConn(config)
     return GCP_map(config,pgconn)
 
@@ -94,8 +99,8 @@ class GCP_map:
 
 
     def create_gcp_map_using_labels(self, input_vertices, gcp, output):
-        vertices_labels = self.get_map_labels(input_vertices, "label" )
-        gcp_labels = self.get_gcp_labels( gcp, self.gcp_label_column)
+        vertices_labels = self.get_map_labels(input_vertices,"node_id", "label" )
+        gcp_labels = self.get_map_labels( gcp,"gid" , self.gcp_label_column)
         map = []
 
         for s_vertex in vertices_labels:
@@ -140,10 +145,10 @@ class GCP_map:
             with self.psql_conn.connection().cursor() as curr:
                 curr.execute(sql)
 
-    def get_map_labels(self, input, input_label_column):
+    def get_map_labels(self, input, input_serial_column,  input_label_column):
         input_table = self.schema_name + "." + input
         sql = f'''
-            select gid,{input_label_column} 
+            select {input_serial_column},{input_label_column} 
             from
                 {input_table}
             '''
@@ -168,5 +173,14 @@ class GCP_map:
 
 
 if __name__=="__main__":
-    mapgcp = gcp_map()
+    parser = argparse.ArgumentParser(description="Description for parser")
+
+    parser.add_argument("-v", "--village", help="Village",
+                        required=False, default="")
+    parser.add_argument("-gcp_toggle", "--gcp_label_toggle", help="GCP label column exists?",
+                        required=False, default="")
+    argument = parser.parse_args()
+    gcp_toggle = argument.gcp_label_toggle
+    village = argument.village
+    mapgcp = gcp_map(village,gcp_toggle)
     mapgcp.run()

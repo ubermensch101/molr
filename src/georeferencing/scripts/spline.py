@@ -8,8 +8,12 @@ from config import *
 from tps import ThinPlateSpline
 import argparse
 
-def spline():
+def spline(village, gcp_label_toggle):
     config = Config()
+    if village != "":
+        config.setup_details['setup']['village'] = village
+    if gcp_label_toggle != "":
+        config.setup_details['georef']['gcp_label_toggle'] = gcp_label_toggle
     pgconn = PGConn(config)
     return Spline(config,pgconn)
 
@@ -23,7 +27,7 @@ class Spline:
         self.gcp = self.config.setup_details['data']['gcp_table']
         self.survey_processed = self.config.setup_details['data']['survey_processed']
         self.farmplots = self.config.setup_details['data']['farmplots_table']
-        self.gcp_map = self.config.setup_deatils['georef']['gcp_map']
+        self.gcp_map = self.config.setup_details['georef']['gcp_map']
         self.gcp_label_toggle = self.config.setup_details['georef']['gcp_label_toggle']
         self.survey_spline = self.config.setup_details['georef']['spline']
         self.survey_jitter = self.config.setup_details['data']['survey_jitter_table']
@@ -33,7 +37,7 @@ class Spline:
     def survey_jitter_spline(self, input, gcpmap, output):
         input_table = self.schema_name + "." + input
         gcp_map = self.schema_name + "." + gcpmap
-        original_output_name = self.schema_name + "." + output
+        original_output_name =  output
         output_table = self.temp_georeferencing_schema+"."+output
         sql = f'''
             select st_x(geom),st_y(geom) from {gcp_map}
@@ -111,7 +115,7 @@ class Spline:
                     select gid from {gcp}
                     where st_intersects(st_point({x},{y},32643),st_buffer(geom,0.5));
                 '''.format(
-                    gcp=self.gcp,
+                    gcp=self.schema_name + "." +self.gcp,
                     x=j[0],
                     y=j[1]
                 )
@@ -137,7 +141,7 @@ class Spline:
                 select gid from {gcp}
                 where st_intersects(st_point({x},{y},32643),st_buffer(geom,0.5));
             '''.format(
-                gcp=self.gcp,
+                gcp=self.schema_name + "." +self.gcp,
                 x=j[0],
                 y=j[1]
             )
@@ -164,9 +168,10 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for parser")
     parser.add_argument("-gcp_toggle", "--gcp_label_toggle", help="GCP label column exists?",
                         required=False, default="")
+    parser.add_argument("-v", "--village", help="Village",
+                        required=False, default="")
     argument = parser.parse_args()
     gcp_label_toggle = argument.gcp_label_toggle
-    spl = spline()
-    if gcp_label_toggle != "":
-        spl.gcp_label_toggle = gcp_label_toggle
+    village = argument.village
+    spl = spline(village, gcp_label_toggle)
     excess_area, gcps_used = spl.run()
