@@ -1,5 +1,6 @@
 from scripts import *
 from utils import *
+from config import *
 import argparse
 
 def create_topology_edges(village=""):
@@ -25,48 +26,10 @@ class Topology_Edges_Creater:
         self.possession_5_var = config.setup_details['pos']['possession_5']
         self.farm_superpoly_topo = config.setup_details['pos']['farm_superpoly_topo']
         self.edge = config.setup_details['pos']['edge']
+        self.create_topo_tolerance = config.setup_details['pos']['create_topo_tolerance']
         if self.village == "":
             print("ERROR")
             exit()
-
-    def create_topology(self):
-        # possession_4_var = config.setup_details['pos']['possession_4']
-        # farm_superpoly_topo = config.setup_details['pos']['farm_superpoly_topo']
-
-        output_topo = f'{self.village}_{self.farm_superpoly_topo}'
-        input_table = f'{self.village}.{self.possession_4_var}'
-
-        if check_schema_exists(self.psql_conn, output_topo):
-            comment_cadastral_topo_drop=""
-        else:
-            comment_cadastral_topo_drop="--"
-            
-        sql_query=f"""
-            {comment_cadastral_topo_drop}select DropTopology('{output_topo}');
-            select CreateTopology('{output_topo}', 32643);
-
-            select
-                ((st_dump(st_force2d(st_makevalid(geom)))).geom) as geom
-            from
-                {input_table}
-            ;
-        """
-        with self.psql_conn.connection().cursor() as curr:
-            curr.execute(sql_query)
-            geoms_fetch=curr.fetchall()
-
-        polygon_geoms=[geom_fetch[0] for geom_fetch in geoms_fetch]
-
-        for polygon_geom in polygon_geoms:
-            sql_query=f"""
-                select topogeo_addpolygon(
-                    '{output_topo}',
-                    '{polygon_geom}'::geometry(Polygon, 32643),
-                    0.1
-                );
-            """  
-            with self.psql_conn.connection().cursor() as curr:
-                curr.execute(sql_query)
 
     def simplify(self):
         "Takes a space partition of polygons and applies st_simplify"
@@ -155,7 +118,8 @@ class Topology_Edges_Creater:
                 curr.execute(sql_query)
 
     def run(self):
-        self.create_topology()
+        output_topo = f'{self.village}_{self.farm_superpoly_topo}'
+        create_topo(self.psql_conn, self.village, output_topo, self.possession_4_var, self.create_topo_tolerance)
         self.simplify()
         self.clean_snap_error()
         self.create_topology_edges()

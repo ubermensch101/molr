@@ -13,14 +13,6 @@ def possession(village = ""):
     
     return Possession(config,pgconn)
 
-    # config = Config()
-    
-    # pgconn = PGConn(config)
-    # if village != "":    
-    #     config.setup_details['setup']['village'] = village
-    
-    # return DataValidationAndPreparation(config,pgconn)
-
 class Possession:
     def __init__(self,config,psql_conn):
         self.config = config
@@ -50,14 +42,12 @@ class Possession:
         possession_3 = f'{self.village}.{self.possession_3}'
         possession_4 = f'{self.village}.{self.possession_4}'
         temporary_possession = f'{self.village}.{self.temp_possession}'
-        # possession_5 = f'{self.village}.{self.possession_5}'
 
         farm_plot_ownership = f'{self.village}.{self.farm_ownership}'
         farm_plot_ownership_2 = f'{self.village}.{self.farm_ownership_2}'
         farm_plot_ownership_3 = f'{self.village}.{self.farm_ownership_3}'
         farm_plot_ownership_4 = f'{self.village}.{self.farm_ownership_4}'
 
-        # farm_possession_poly = f'{self.village}.{self.possession_final}'
         cut_narrow_faces(self.config, self.psql_conn, farm_plot_ownership, temporary_possession)
         create_super_poly(self.config, self.psql_conn, temporary_possession, possession_1)
         add_column(self.psql_conn, temporary_possession, 'gid', 'serial')
@@ -66,47 +56,25 @@ class Possession:
         break_voids(self.config, self.psql_conn, farm_plot_ownership_2, farm_plot_ownership_3)
         create_super_poly(self.config, self.psql_conn, farm_plot_ownership_3, possession_3)
         break_voids_2(self.config, self.psql_conn, farm_plot_ownership_3, farm_plot_ownership_4)
-        create_super_poly_2(self.config, self.psql_conn, farm_plot_ownership_4, possession_4)
-        self.create_final_possession()
+        create_super_poly(self.config, self.psql_conn, farm_plot_ownership_4, possession_4)
+        
 
     def create_final_possession(self):
         edges_creater = Topology_Edges_Creater(self.config, self.psql_conn)
         edges_creater.run()
     
     def assigning_farm_vs_void(self):
-        assigner = Type_Assigner(self.config, self.psql_conn)
-        assigner.run()
+        assign_type_farm_vs_void(self.config, self.psql_conn)
     
     def run(self):
-        farm_faces = f'{self.village}.{self.farm_faces}'
-        shifted_faces = f'{self.village}.{self.shifted_faces}'
-        narrow_face_creator(self.config, self.psql_conn)
-        add_column(self.psql_conn, shifted_faces, 'gid', 'serial')
-        
-        sql_query = f"""
-            with un as (
-                select st_union(geom) as geom from {self.village}.{self.farm_faces}
-            ),
-            g as (
-                select st_difference(st_envelope(un.geom),un.geom) as geom from un
-            )
-            
-            insert into {self.village}.{self.farm_faces} (geom)
-            select geom from g;
-        """
-        with self.psql_conn.connection().cursor() as curr:
-            curr.execute(sql_query)
-
-        add_column(self.psql_conn, farm_faces, 'gid', 'serial')
+        setup = Setup_Pos(self.config, self.psql_conn)
+        setup.run()
 
         self.assigning_farm_vs_void()
         self.cut_farms()
+        self.create_final_possession()
         topo_name = f'{self.village}_{self.farm_topo}'
         polygonize_topo(self.psql_conn, self.village, topo_name, self.possession_final)
-        # polygonize(f'{farm_superpoly_topo}.edge',farm_possession_poly)
-        # using original polygonize cause output differed significantly
-        # farm_superpoly_topo = f'{self.village}_{self.farm_topo}.edge'
-        # polygonize(self.psql_conn, farm_superpoly_topo, self.possession_final)
     
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for my parser")

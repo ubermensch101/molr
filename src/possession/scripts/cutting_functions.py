@@ -107,7 +107,7 @@ def polygonize(psql_conn, input_table, output_table):
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql_query)
 
-def narrow_face_creator(config, psql_conn):
+def narrow_face_identifier(config, psql_conn):
     village = config.setup_details['setup']['village']
     shifted_faces = config.setup_details['pos']['shifted_faces']
     narrow_faces = config.setup_details['pos']['narrow_faces']
