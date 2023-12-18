@@ -1,6 +1,7 @@
 import subprocess
 import os
 import argparse
+import pandas as pd
 from config import *
 from utils import PGConn
 
@@ -40,12 +41,16 @@ def save_data(config,path):
         
     for table in [report, gcp_report]:
         file = os.path.join(village_folder_name, f'{village}_{table}.csv')
-        
-        cp_cmd = [
-            'psql','-h',f'{host}','-p',f'{port}','-U',f'{user}','-d',f'{database}','-w',
-            '-c',f"""\copy (select * from {village}.{table}) to '{file}' with csv header"""
-        ]
-        subprocess.run(cp_cmd, env={'PGPASSWORD':password})  
+        psql_conn = PGConn(config)
+        sql_query = f'''
+            select * from {village}.{table};
+        '''
+        with psql_conn.connection().cursor() as curr:
+            curr.execute(sql_query)
+            columns = [d[0] for d in curr.description]
+            data = curr.fetchall()
+        df = pd.DataFrame(data,columns = columns)
+        df.to_csv(file, index=False)
         
     zip_cmd = [
         'zip','-r',

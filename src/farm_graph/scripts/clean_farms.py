@@ -107,7 +107,7 @@ class Farmplot_Cleaner:
 
     def run(self):
         copy_table(self.psql_conn, self.village+'.'+self.farmplots, self.village+'.'+self.farmplots_dup)
-        update_srid(self.psql_conn, self.village+'.'+self.farmplots_dup, 'geom', 32643)
+        update_srid(self.psql_conn, self.village+'.'+self.farmplots_dup, 'geom', config.setup_details['setup']['srid'])
         add_column(self.psql_conn, self.village+'.'+self.farmplots_dup, 'gid','serial')
         rename_column(self.psql_conn,  self.village, self.farmplots_dup, 'descriptio','description')
         self.remove_trees(self.village+'.'+self.farmplots_dup)
