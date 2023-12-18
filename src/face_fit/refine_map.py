@@ -30,8 +30,12 @@ class Face_Fit:
     def facefit_snap(self):
         pass
     
+    def setup_fbfs(self):
+        setup = Setup_Facefit(self.config,self.psql_conn)
+        setup.run()
+    
     def run(self):
-        pass
+        self.setup_fbfs()
     
 if __name__=="__main__":
     fbfs = face_fit()

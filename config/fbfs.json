@@ -1,3 +1,9 @@
 {
-    "tol1": "0.1"
+    "input_table":"survey_georeferenced",
+    "input_topo_suffix":"_survey_topo",
+    "original_faces_table":"original_faces",
+    "narrow_faces_table":"narrow_faces",
+    "topo_tol":"1",
+    "seg_tol":"1",
+    "seg_length":"10000"
 }

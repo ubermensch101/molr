@@ -38,9 +38,9 @@ def create_topo(psql_conn, schema, topo_schema, input_table, tol=0):
             select
                 (st_dumppoints(geom)).geom as geom
             from 
-                {topo_schema}.edge
+                {topo_schema}.edge_data
         ) 
-        select topology.AddNode('{topo_schema}',geom, true) from points;
+        select TopoGeo_AddPoint('{topo_schema}',geom, {tol}) from points;
     """
     
     with psql_conn.connection().cursor() as curr:
