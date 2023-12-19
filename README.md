@@ -15,4 +15,5 @@ Installation flow: always at root
 - openpyxl
 - thin-plate-spline
 - scikit-learn
+- opencv-python
 4. pip3 install -e .
