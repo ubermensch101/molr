@@ -49,14 +49,14 @@ class Possession:
         farm_plot_ownership_4 = f'{self.village}.{self.farm_ownership_4}'
 
         cut_narrow_faces(self.config, self.psql_conn, farm_plot_ownership, temporary_possession)
-        create_super_poly(self.config, self.psql_conn, temporary_possession, possession_1)
+        create_super_poly(self.config, self.psql_conn, self.shifted_faces, temporary_possession, possession_1)
         add_column(self.psql_conn, temporary_possession, 'gid', 'serial')
         break_voids(self.config, self.psql_conn, temporary_possession, farm_plot_ownership_2)
-        create_super_poly(self.config, self.psql_conn, farm_plot_ownership_2, possession_2)
+        create_super_poly(self.config, self.psql_conn, self.shifted_faces, farm_plot_ownership_2, possession_2)
         break_voids(self.config, self.psql_conn, farm_plot_ownership_2, farm_plot_ownership_3)
-        create_super_poly(self.config, self.psql_conn, farm_plot_ownership_3, possession_3)
+        create_super_poly(self.config, self.psql_conn, self.shifted_faces, farm_plot_ownership_3, possession_3)
         break_voids_2(self.config, self.psql_conn, farm_plot_ownership_3, farm_plot_ownership_4)
-        create_super_poly(self.config, self.psql_conn, farm_plot_ownership_4, possession_4)
+        create_super_poly(self.config, self.psql_conn, self.shifted_faces, farm_plot_ownership_4, possession_4)
         
 
     def create_final_possession(self):

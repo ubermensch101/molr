@@ -3,12 +3,11 @@ from utils import *
 from scripts import *
 import argparse
 
-def create_super_poly(config, psql_conn, input_table, output_table):
+def create_super_poly(config, psql_conn, input_faces, input_table, output_table):
     """Input table -- farm graph polygons
     Output table --- super polygons table name(will be created in the function)"""
 
     # void_abs_threhold = 3000
-    shifted_faces = config.setup_details['pos']['shifted_faces']
     void_percent_threshold = config.setup_details['pos']['void_percent_threshold']
     village = config.setup_details['setup']['village']
     ratio_inclusion_small = config.setup_details['pos']['ratio_inclusion_small']
@@ -24,7 +23,7 @@ def create_super_poly(config, psql_conn, input_table, output_table):
             WHEN type = 'farm'
             THEN
             (
-                select gid from {village}.{shifted_faces} as q
+                select gid from {village}.{input_faces} as q
                 where 
                 (st_area(p.geom) < 10000 
                 and
@@ -44,7 +43,7 @@ def create_super_poly(config, psql_conn, input_table, output_table):
             )
             ELSE
             (
-                select gid from {village}.{shifted_faces} as q
+                select gid from {village}.{input_faces} as q
                 where 
                     st_area(st_intersection(p.geom, q.geom)) > {void_percent_threshold}*st_area(p.geom)
                 order by st_area(st_intersection(p.geom, q.geom)) desc

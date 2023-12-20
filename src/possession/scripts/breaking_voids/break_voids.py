@@ -7,10 +7,6 @@ import argparse
 def break_voids(config, psql_conn, input_onwership_polygons, output_ownership_polygons):
     """ Function to break unassigned farmplots and voids
     """
-    # transformed_edges = self.topo_name + ".edge"
-    # self.topo_name = input_topo
-    # input_topo = topo = f'{village}_shifted_topo'
-    # transformed_edges = {village}_shifted_topo.edge
     shifted_topo = config.setup_details['pos']['topo']
     edge = config.setup_details['pos']['edge']
     village = config.setup_details['setup']['village']
