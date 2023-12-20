@@ -1,7 +1,6 @@
 from utils import *
 from config import *
 from scripts import *
-import json
 from src.data_validation.scripts.analysis.analyse_gcps import *
 
 def georeferencer(village, gcp_label_toggle):

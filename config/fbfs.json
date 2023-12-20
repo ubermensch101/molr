@@ -3,7 +3,10 @@
     "input_topo_suffix":"_survey_topo",
     "original_faces_table":"original_faces",
     "narrow_faces_table":"narrow_faces",
+    "narrow_midlines_table":"narrow_midlines",
     "topo_tol":"1",
     "seg_tol":"1",
-    "seg_length":"10000"
+    "seg_length":"10000",
+    "nar_face_shp_index_thresh":"55",
+    "survey_no_assignment_intersection_thresh":"0.8"
 }

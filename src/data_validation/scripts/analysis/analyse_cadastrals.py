@@ -36,8 +36,9 @@ def analyse_cadastrals(config, psql_conn):
             count(*)
         from 
             {village}.{cadastrals}
-        {comment}where
-        {comment}    pin is NULL
+            
+        {comment}where pin is NULL
+        
         ;
     '''
     with psql_conn.connection().cursor() as curr:

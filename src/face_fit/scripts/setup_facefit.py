@@ -22,10 +22,13 @@ class Setup_Facefit:
         self.ori = self.config.setup_details['fbfs']['original_faces_table']
         self.nar = self.config.setup_details['fbfs']['narrow_faces_table']
         self.topo = self.village + self.config.setup_details['fbfs']['input_topo_suffix']
+        self.nar_mid = self.config.setup_details['fbfs']['narrow_midlines_table']
 
         self.tol = self.config.setup_details['fbfs']['topo_tol']
         self.seg_tol = self.config.setup_details['fbfs']['seg_tol']
         self.seg_length = self.config.setup_details['fbfs']['seg_length']
+        self.nar_face_shp_index_thresh = self.config.setup_details['fbfs']['nar_face_shp_index_thresh']
+        self.intersection_thresh = self.config.setup_details['fbfs']['survey_no_assignment_intersection_thresh']
 
         if self.village == "":
             print("ERROR")
@@ -104,10 +107,10 @@ class Setup_Facefit:
                 not st_intersects(st_intersection(p.geom, q.geom), st_buffer(narrow_faces.geom, 5))
                 and
                 (
-                    (degrees(st_angle(p.geom,q.geom)) > 170
-                    and degrees(st_angle(p.geom,q.geom)) < 190) or
-                    degrees(st_angle(p.geom,q.geom)) < 10
-                    or degrees(st_angle(p.geom,q.geom)) > 350
+                    (degrees(st_angle(p.geom,q.geom)) > 135
+                    and degrees(st_angle(p.geom,q.geom)) < 225) or
+                    degrees(st_angle(p.geom,q.geom)) < 45
+                    or degrees(st_angle(p.geom,q.geom)) > 315
                 )
             ;
         """.format(topo_schema = self.topo)
@@ -132,8 +135,89 @@ class Setup_Facefit:
             visited.append(pairs[1])
     
     def make_faces(self):
+        sql_query=f"""
+            select polygonize('{self.topo}');
+
+            drop table if exists {self.village}.{self.ori};
+            create table {self.village}.{self.ori} as
+            
+            select
+                face_id,
+                st_makevalid(st_getfacegeometry('{self.topo}', face_id)) as geom
+            from
+                {self.topo}.face
+            where
+                face_id>0
+                and
+                st_perimeter(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) * 
+                    st_perimeter(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) /
+                    st_area(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) < {self.nar_face_shp_index_thresh}
+            ;
+
+
+            drop table if exists {self.village}.{self.nar};
+            create table {self.village}.{self.nar} as
+            
+            select
+                face_id,
+                st_makevalid(st_getfacegeometry('{self.topo}', face_id)) as geom
+            from
+                {self.topo}.face
+            where
+                face_id>0
+                and
+                st_area(st_makevalid(st_getfacegeometry('{self.topo}', face_id)))>1
+                and
+                st_perimeter(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) * 
+                    st_perimeter(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) /
+                    st_area(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) > {self.nar_face_shp_index_thresh}
+            ;
+
+
+            drop table if exists {self.village}.{self.nar_mid};
+            create table {self.village}.{self.nar_mid} as
+
+            select
+                face_id,
+                st_approximatemedialaxis(geom) as geom
+            from
+                {self.village}.{self.nar}
+            where
+                st_area(geom)>1
+            ;
+        """
         
-        pass
+        with self.psql_conn.connection().cursor() as curr:
+            curr.execute(sql_query)
+        
+        sql_query = f"""
+            update {self.village}.{self.ori}
+            set geom = st_multi(geom);
+            
+            alter table {self.village}.{self.ori}
+            add column if not exists survey_no varchar(100) default '',
+            add column if not exists akarbandh_area float,
+            add column if not exists valid bool,
+            add column if not exists varp float,
+            add column if not exists shape_index float,
+            add column if not exists farm_intersection float,
+            add column if not exists farm_rating float;
+            
+            update {self.village}.{self.ori} o
+            set survey_no = a.survey_no,
+                akarbandh_area = a.akarbandh_area,
+                valid = a.valid,
+                varp = a.varp,
+                shape_index = a.shape_index,
+                farm_intersection = a.farm_intersection,
+                farm_rating = a.farm_rating
+            from {self.village}.{self.inp} as a
+            where st_area(st_intersection(o.geom,a.geom))/st_area(o.geom) > {self.intersection_thresh};
+        """
+        with self.psql_conn.connection().cursor() as curr:
+            curr.execute(sql_query)
+        add_gist_index(self.psql_conn, self.village, self.ori, 'geom')
+        add_gist_index(self.psql_conn, self.village, self.nar, 'geom')
 
     def run(self):
         create_topo(self.psql_conn, self.village, self.topo, self.inp, self.tol)

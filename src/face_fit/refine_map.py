@@ -1,14 +1,14 @@
 from utils import *
 from config import *
+from scripts import *
 import json
 
 def face_fit():
     config = Config()
     
-    pgconn = PGConn(config.setup_details["psql"])
-    conn = pgconn.connection()
+    pgconn = PGConn(config)
     
-    return Face_Fit(config,conn)
+    return Face_Fit(config,pgconn)
 
 class Face_Fit:
     def __init__(self,config,psql_conn):
