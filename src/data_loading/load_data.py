@@ -82,6 +82,7 @@ class FarmplotLoading:
         if self.path == "":
             print("Data path not set for farmplots")
             return
+        srid = self.config.setup_details['setup']['srid']
         table_name = self.config.setup_details["data"]["farmplots_table"]
         for (root,dirs,files) in os.walk(self.path, topdown=True):
             for file in files:
@@ -91,7 +92,7 @@ class FarmplotLoading:
                     print(file,village)
                     file_location = os.path.join(root,file)
                     ogr2ogr_cmd = [
-                        'ogr2ogr','-f','PostgreSQL',
+                        'ogr2ogr','-f','PostgreSQL','-t_srs',f'EPSG:{srid}',
                         'PG:dbname=' + self.psql_conn.details["database"] + ' host=' +
                             self.psql_conn.details["host"] + ' user=' + self.psql_conn.details["user"] +
                             ' password=' + self.psql_conn.details["password"],
