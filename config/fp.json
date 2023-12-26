@@ -17,7 +17,7 @@
     "farm_topo_suffix":"_farm_topo",
     "farm_topo_temp_suffix":"_farm_topo_temp",
     "fp_midline_polygons":"farmplots_midlines_polygons",
-    "fp_midline_polygons_filtered":"fltered_farmplots_midlines_polygons",
+    "fp_midline_polygons_filtered":"filtered_farmplots_midlines_polygons",
     "filtering_intersection_threshold":"0.5",
     "seg_tol":"2",
     "seg_length":"10000",

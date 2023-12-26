@@ -89,7 +89,7 @@ class Setup_Facefit:
                     and
                     st_perimeter(st_makevalid(st_getfacegeometry('{topo_schema}', face_id))) * 
                         st_perimeter(st_makevalid(st_getfacegeometry('{topo_schema}', face_id))) /
-                        st_area(st_makevalid(st_getfacegeometry('{topo_schema}', face_id))) > 55
+                        st_area(st_makevalid(st_getfacegeometry('{topo_schema}', face_id))) > {thresh}
             )
 
             select
@@ -107,13 +107,13 @@ class Setup_Facefit:
                 not st_intersects(st_intersection(p.geom, q.geom), st_buffer(narrow_faces.geom, 5))
                 and
                 (
-                    (degrees(st_angle(p.geom,q.geom)) > 135
-                    and degrees(st_angle(p.geom,q.geom)) < 225) or
-                    degrees(st_angle(p.geom,q.geom)) < 45
-                    or degrees(st_angle(p.geom,q.geom)) > 315
+                    (degrees(st_angle(p.geom,q.geom)) > 170
+                    and degrees(st_angle(p.geom,q.geom)) < 190) or
+                    degrees(st_angle(p.geom,q.geom)) < 10
+                    or degrees(st_angle(p.geom,q.geom)) > 350
                 )
             ;
-        """.format(topo_schema = self.topo)
+        """.format(topo_schema = self.topo, thresh=self.nar_face_shp_index_thresh)
 
         with self.psql_conn.connection().cursor() as curs:
             curs.execute(sql_query)
@@ -133,6 +133,22 @@ class Setup_Facefit:
 
             visited.append(pairs[0])
             visited.append(pairs[1])
+            
+        sql_query="""select 
+                        st_changeedgegeom(
+                            '{topo_schema}',
+                            e.edge_id, 
+                            st_makeline(
+                                (select geom from {topo_schema}.node where node_id = e.start_node),
+                                (select geom from {topo_schema}.node where node_id = e.end_node)
+                            )
+                        )
+                    from 
+                        {topo_schema}.edge_data e
+                """.format(topo_schema=self.topo)
+
+        with self.psql_conn.connection().cursor() as curs:
+            curs.execute(sql_query)
     
     def make_faces(self):
         sql_query=f"""
@@ -203,6 +219,12 @@ class Setup_Facefit:
             add column if not exists farm_intersection float,
             add column if not exists farm_rating float;
             
+            alter table {self.village}.{self.inp}_t
+            add column if not exists face_id integer;
+            
+            update {self.village}.{self.inp}_t
+            set face_id = (select (gettopogeomelements(topo))[1] limit 1);
+            
             update {self.village}.{self.ori} o
             set survey_no = a.survey_no,
                 akarbandh_area = a.akarbandh_area,
@@ -211,8 +233,8 @@ class Setup_Facefit:
                 shape_index = a.shape_index,
                 farm_intersection = a.farm_intersection,
                 farm_rating = a.farm_rating
-            from {self.village}.{self.inp} as a
-            where st_area(st_intersection(o.geom,a.geom))/st_area(o.geom) > {self.intersection_thresh};
+            from {self.village}.{self.inp}_t as a
+            where a.face_id=o.face_id;
         """
         with self.psql_conn.connection().cursor() as curr:
             curr.execute(sql_query)

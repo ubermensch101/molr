@@ -8,5 +8,10 @@
     "seg_tol":"1",
     "seg_length":"10000",
     "nar_face_shp_index_thresh":"55",
-    "survey_no_assignment_intersection_thresh":"0.8"
+    "survey_no_assignment_intersection_thresh":"0.8",
+    "corner_nodes":"corner_nodes",
+    "corner_nodes_angle_thresh":"45",
+    "corner_nodes_label_column":"label",
+    "corner_nodes_label_buf_thresh":"0.1",
+    "gcp_map_table":"gcp_mapping"
 }

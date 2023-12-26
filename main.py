@@ -1,17 +1,20 @@
-import json
 from config import *
 from utils import *
+import argparse
 
-def main():
+def main(village=""):
     config = Config()
     
-    pgconn = PGConn(config.setup_details["psql"])
-    conn = pgconn.connection()
+    pgconn = PGConn(config)
+    if village != "":    
+        config.setup_details['setup']['village'] = village
     
-    return Main(config,conn)
+    return Main(config, pgconn)
 
 class Main:
-    def __init__(self, config, conn):
+    def __init__(self, config, psql_conn):
+        self.config = config
+        self.psql_conn = psql_conn
         pass
         
     def run_data_loading(self):
@@ -39,7 +42,15 @@ class Main:
         pass
 
 if __name__=="__main__":
-    main_pipeline = main()
+    parser = argparse.ArgumentParser(description="Description for my parser")
+
+    parser.add_argument("-v", "--village", help="Village name",
+                        required=False, default="")
+
+    argument = parser.parse_args()
+    
+    village = argument.village
+    main_pipeline = main(village)
     main_pipeline.run()
     
     

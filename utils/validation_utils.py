@@ -85,6 +85,10 @@ def add_varp(psql_conn, schema, input_table, column_name):
             curr.execute(sql)
             res = curr.fetchall()
         varp = calculate_varp_of_individual(res)
+        if np.isnan(varp):
+            varp = 1
+            varp_sum += varp
+            continue
         varp_sum += varp
         sql = f'''
             update {schema}.{input_table}

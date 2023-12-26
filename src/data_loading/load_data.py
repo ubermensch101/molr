@@ -91,6 +91,9 @@ class FarmplotLoading:
                     village = village.replace(' ','')
                     print(file,village)
                     file_location = os.path.join(root,file)
+                    
+                    create_schema(self.psql_conn, village, delete_original= False)
+                    
                     ogr2ogr_cmd = [
                         'ogr2ogr','-f','PostgreSQL','-t_srs',f'EPSG:{srid}',
                         'PG:dbname=' + self.psql_conn.details["database"] + ' host=' +

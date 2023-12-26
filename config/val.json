@@ -9,5 +9,8 @@
     "validation_thresh": "5",
     "farm_rating_validation_thresh": "95",
     "farm_intersection_thresh": "60",
-    "akarbandh_validity_thresh": "15"
+    "akarbandh_validity_thresh": "15",
+    "vb_gcp_label": "vb",
+    "gcp_label_convention": {"G":"g", "S":"rv", "R":"rd"},
+    "label_delimiter": "-|,"
 }

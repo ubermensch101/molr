@@ -16,7 +16,7 @@ def get_geom_type(psql_conn, table):
     return type[0]
     
 
-def create_topo(psql_conn, schema, topo_schema, input_table, tol=0):
+def create_topo(psql_conn, schema, topo_schema, input_table, tol=0, srid=32643):
     
     type = get_geom_type(psql_conn, schema+'.'+input_table)
     
@@ -24,7 +24,7 @@ def create_topo(psql_conn, schema, topo_schema, input_table, tol=0):
     
     sql=f"""
         {comment}select DropTopology('{topo_schema}');
-        select CreateTopology('{topo_schema}', 32643, {tol});
+        select CreateTopology('{topo_schema}', {srid}, {tol});
         
         drop table if exists {schema}.{input_table}_t;
         create table {schema}.{input_table}_t as table {schema}.{input_table};
