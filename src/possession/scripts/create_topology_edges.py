@@ -1,8 +1,23 @@
 from scripts import *
 from utils import *
 from config import *
-from possession import *
 import argparse
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,  # Set the logging level to INFO
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+# Create a formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Create a FileHandler to log messages to a file
+file_handler = logging.FileHandler('logfile.log')  # Specify the file name
+file_handler.setLevel(logging.DEBUG)  # Set the logging level for this handler
+file_handler.setFormatter(formatter)
+# Add the FileHandler to the logger
+logger.addHandler(file_handler)
 
 def create_topology_edges(village=""):
     config = Config()
@@ -124,22 +139,22 @@ class Topology_Edges_Creater:
             create_topo(self.psql_conn, self.village, output_topo, self.possession_4_var, self.create_topo_tolerance)
             logger.info("Topology created")
         except:
-            logger.error("Error creating topology")
+            logger.error("Error creating topology", exc_info=True)
         try:
             self.simplify()
             logger.info("Simplified the topology")
         except:
-            logger.error("Error simplifying topology")
+            logger.error("Error simplifying topology", exc_info=True)
         try:
             self.clean_snap_error()
             logger.info("Cleaned snap error")
         except:
-            logger.error("Error in cleaning snap error")
+            logger.error("Error in cleaning snap error", exc_info=True)
         try:
             self.create_topology_edges()
             logger.info("Successfully created topology edges")
         except:
-            logger.error("Error creating topology edges")
+            logger.error("Error creating topology edges", exc_info=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Description for my parser")

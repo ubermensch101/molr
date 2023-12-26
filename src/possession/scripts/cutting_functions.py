@@ -1,7 +1,22 @@
 from config import *
 from utils import *
 from scripts import *
-from possession import *
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,  # Set the logging level to INFO
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+# Create a formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Create a FileHandler to log messages to a file
+file_handler = logging.FileHandler('logfile.log')  # Specify the file name
+file_handler.setLevel(logging.DEBUG)  # Set the logging level for this handler
+file_handler.setFormatter(formatter)
+# Add the FileHandler to the logger
+logger.addHandler(file_handler)
 
 def find_splitting_edge(psql_conn, gid, input_onwership_polygons, transformed_edges):
     # Find the shifted face edge by which the farmplot need to be cut
@@ -111,4 +126,4 @@ def polygonize(psql_conn, input_table, output_table):
             curr.execute(sql_query)
         logger.info("Polygonising completed")
     except:
-        logger.error("Could not complete polygonising")
+        logger.error("Could not complete polygonising", exc_info=True)

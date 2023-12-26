@@ -1,7 +1,7 @@
 {
     "tol1": "0.1",
     "shifted_faces":"shifted_faces",
-    "farm_faces":"farmplots_midlines_polygons",
+    "farm_faces":"farmplots_midline_polygons",
     "farmplots":"farmplots",
     "void_percent_threshold": 0.95,
     "possession_1":"possession_1",

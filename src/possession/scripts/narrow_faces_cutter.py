@@ -1,8 +1,23 @@
 from config import *
 from utils import *
 from scripts import *
-from possession import *
 import argparse
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,  # Set the logging level to INFO
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+# Create a formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Create a FileHandler to log messages to a file
+file_handler = logging.FileHandler('logfile.log')  # Specify the file name
+file_handler.setLevel(logging.DEBUG)  # Set the logging level for this handler
+file_handler.setFormatter(formatter)
+# Add the FileHandler to the logger
+logger.addHandler(file_handler)
 
 def cut_narrow_faces(config, psql_conn, input_table, output_table):
     '''input table -> farm graph polygons

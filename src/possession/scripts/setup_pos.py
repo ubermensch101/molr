@@ -1,7 +1,22 @@
 from scripts import *
 from utils import *
 from config import *
-from possession import *
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,  # Set the logging level to INFO
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+# Create a formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Create a FileHandler to log messages to a file
+file_handler = logging.FileHandler('logfile.log')  # Specify the file name
+file_handler.setLevel(logging.DEBUG)  # Set the logging level for this handler
+file_handler.setFormatter(formatter)
+# Add the FileHandler to the logger
+logger.addHandler(file_handler)
 
 def setup_pos(village=""):
     config = Config()
@@ -43,7 +58,7 @@ class Setup_Pos:
             self.psql_conn.connection().commit()
             logger.info("Identified narrow faces")
         except:
-            logger.error("Error identifying narrow faces")
+            logger.error("Error identifying narrow faces", exc_info=True)
 
     def add_void_polygon(self):
         sql_query = f"""
