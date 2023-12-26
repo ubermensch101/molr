@@ -1,6 +1,7 @@
 from scripts import *
 from utils import *
 from config import *
+from possession import *
 import argparse
 
 def create_topology_edges(village=""):
@@ -28,7 +29,7 @@ class Topology_Edges_Creater:
         self.edge = config.setup_details['pos']['edge']
         self.create_topo_tolerance = config.setup_details['pos']['create_topo_tolerance']
         if self.village == "":
-            print("ERROR")
+            logger.error("Village name not found")
             exit()
 
     def simplify(self):
@@ -119,10 +120,26 @@ class Topology_Edges_Creater:
 
     def run(self):
         output_topo = f'{self.village}_{self.farm_superpoly_topo}'
-        create_topo(self.psql_conn, self.village, output_topo, self.possession_4_var, self.create_topo_tolerance)
-        self.simplify()
-        self.clean_snap_error()
-        self.create_topology_edges()
+        try:
+            create_topo(self.psql_conn, self.village, output_topo, self.possession_4_var, self.create_topo_tolerance)
+            logger.info("Topology created")
+        except:
+            logger.error("Error creating topology")
+        try:
+            self.simplify()
+            logger.info("Simplified the topology")
+        except:
+            logger.error("Error simplifying topology")
+        try:
+            self.clean_snap_error()
+            logger.info("Cleaned snap error")
+        except:
+            logger.error("Error in cleaning snap error")
+        try:
+            self.create_topology_edges()
+            logger.info("Successfully created topology edges")
+        except:
+            logger.error("Error creating topology edges")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Description for my parser")

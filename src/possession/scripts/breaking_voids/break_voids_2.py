@@ -1,71 +1,76 @@
 from config import *
 from utils import *
 from scripts import *
+from possession import *
 import argparse
 
 def break_voids_2(config, psql_conn, input_onwership_polygons, output_ownership_polygons):
     """ Function to break unasigned farmplots and voids
     """
-    village = config.setup_details['setup']['village']
-    shifted_topo = config.setup_details['pos']['topo']
-    edge = config.setup_details['pos']['edge']
-    transformed_edges = f'{village}_{shifted_topo}.{edge}'
+    try:
+        village = config.setup_details['setup']['village']
+        shifted_topo = config.setup_details['pos']['topo']
+        edge = config.setup_details['pos']['edge']
+        transformed_edges = f'{village}_{shifted_topo}.{edge}'
 
-    sql_query = f'''
-        drop table if exists {output_ownership_polygons};
-        create table {output_ownership_polygons}
-        as select * from {input_onwership_polygons};
-            
-        select 
-            gid 
-        from 
-            {input_onwership_polygons}
-        where
-            survey_gid is NULL;
-    '''
-    with psql_conn.connection().cursor() as curr:
-        curr.execute(sql_query)
-        res = curr.fetchall()
-        
-    for (gid,) in res:
-        print(f"Processing {input_onwership_polygons} gid {gid}")
         sql_query = f'''
-            drop table if exists {village}.temp;
-            create table {village}.temp as
-            select 
-                (st_dump(
-                    st_split(
-                        (select geom from {input_onwership_polygons} where gid = {gid}),
-                        (select st_union(geom) from {transformed_edges})
-                    )
-                )).geom as geom
-        '''
-        with psql_conn.connection().cursor() as curr:
-            curr.execute(sql_query)
+            drop table if exists {output_ownership_polygons};
+            create table {output_ownership_polygons}
+            as select * from {input_onwership_polygons};
                 
-        sql_query = f'''
-            insert into {output_ownership_polygons} (geom)
-                select geom from {village}.temp;
-            update {output_ownership_polygons}
-            set type = 'void'
-            where type is NULL;
-
-            delete from {output_ownership_polygons}
-            where gid = {gid};
-
+            select 
+                gid 
+            from 
+                {input_onwership_polygons}
+            where
+                survey_gid is NULL;
         '''
         with psql_conn.connection().cursor() as curr:
             curr.execute(sql_query)
+            res = curr.fetchall()
+            
+        for (gid,) in res:
+            logger.info(f"Processing {input_onwership_polygons} gid {gid}")
+            sql_query = f'''
+                drop table if exists {village}.temp;
+                create table {village}.temp as
+                select 
+                    (st_dump(
+                        st_split(
+                            (select geom from {input_onwership_polygons} where gid = {gid}),
+                            (select st_union(geom) from {transformed_edges})
+                        )
+                    )).geom as geom
+            '''
+            with psql_conn.connection().cursor() as curr:
+                curr.execute(sql_query)
+                    
+            sql_query = f'''
+                insert into {output_ownership_polygons} (geom)
+                    select geom from {village}.temp;
+                update {output_ownership_polygons}
+                set type = 'void'
+                where type is NULL;
 
-    sql_query = f'''
-        alter table {output_ownership_polygons}
-        drop column gid;
+                delete from {output_ownership_polygons}
+                where gid = {gid};
 
-        alter table {output_ownership_polygons}
-        add column gid serial;
-    '''
-    with psql_conn.connection().cursor() as curr:
-        curr.execute(sql_query)
+            '''
+            with psql_conn.connection().cursor() as curr:
+                curr.execute(sql_query)
+
+        sql_query = f'''
+            alter table {output_ownership_polygons}
+            drop column gid;
+
+            alter table {output_ownership_polygons}
+            add column gid serial;
+        '''
+        with psql_conn.connection().cursor() as curr:
+            curr.execute(sql_query)
+        logger.info("Successfully completed break_voids_2()")
+    except:
+        logger.error("Error in break_voids_2()", exc_info=True)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for parser")

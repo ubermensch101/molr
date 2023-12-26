@@ -1,6 +1,7 @@
 from scripts import *
 from utils import *
 from config import *
+from possession import *
 
 def setup_pos(village=""):
     config = Config()
@@ -18,27 +19,31 @@ class Setup_Pos:
         self.farm_faces = self.config.setup_details['pos']['farm_faces']
 
     def narrow_face_identifier(self):
-        village = self.config.setup_details['setup']['village']
-        shifted_faces = self.config.setup_details['pos']['shifted_faces']
-        narrow_faces = self.config.setup_details['pos']['narrow_faces']
-        sql_query=f"""
-            drop table if exists {village}.{narrow_faces};
-            create table {village}.{narrow_faces} as
+        try:
+            village = self.config.setup_details['setup']['village']
+            shifted_faces = self.config.setup_details['pos']['shifted_faces']
+            narrow_faces = self.config.setup_details['pos']['narrow_faces']
+            sql_query=f"""
+                drop table if exists {village}.{narrow_faces};
+                create table {village}.{narrow_faces} as
 
-            select geom                
-            from
-                {village}.{shifted_faces}
-            where
-                st_area(geom)>1
-                and
-                st_perimeter(geom) * 
-                    st_perimeter(geom) /
-                    st_area(geom) > 55
-            ;
-        """
-        with self.psql_conn.connection().cursor() as curr:
-            curr.execute(sql_query)
-        self.psql_conn.connection().commit()
+                select geom                
+                from
+                    {village}.{shifted_faces}
+                where
+                    st_area(geom)>1
+                    and
+                    st_perimeter(geom) * 
+                        st_perimeter(geom) /
+                        st_area(geom) > 55
+                ;
+            """
+            with self.psql_conn.connection().cursor() as curr:
+                curr.execute(sql_query)
+            self.psql_conn.connection().commit()
+            logger.info("Identified narrow faces")
+        except:
+            logger.error("Error identifying narrow faces")
 
     def add_void_polygon(self):
         sql_query = f"""

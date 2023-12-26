@@ -1,6 +1,7 @@
 from config import *
 from utils import *
 from scripts import *
+from possession import *
 import argparse
 
 def create_super_poly(config, psql_conn, input_faces, input_table, output_table):
@@ -8,71 +9,75 @@ def create_super_poly(config, psql_conn, input_faces, input_table, output_table)
     Output table --- super polygons table name(will be created in the function)"""
 
     # void_abs_threhold = 3000
-    void_percent_threshold = config.setup_details['pos']['void_percent_threshold']
-    village = config.setup_details['setup']['village']
-    ratio_inclusion_small = config.setup_details['pos']['ratio_inclusion_small']
-    ratio_inclusion_large = config.setup_details['pos']['ratio_inclusion_large']
+    try:
+        void_percent_threshold = config.setup_details['pos']['void_percent_threshold']
+        village = config.setup_details['setup']['village']
+        ratio_inclusion_small = config.setup_details['pos']['ratio_inclusion_small']
+        ratio_inclusion_large = config.setup_details['pos']['ratio_inclusion_large']
 
-    sql_query = f'''
-        alter table {input_table}
-        add column if not exists survey_gid int;
-        
-        update {input_table} as p
-        set survey_gid = 
-        CASE
-            WHEN type = 'farm'
-            THEN
-            (
-                select gid from {village}.{input_faces} as q
-                where 
-                (st_area(p.geom) < 10000 
-                and
-                st_area(
-                    st_intersection(
-                        p.geom, q.geom
-                    )
-                ) > {ratio_inclusion_small}*st_area(p.geom))
-                or  
-                (st_area(
-                    st_intersection(
-                        p.geom, q.geom
-                    )
-                ) > {ratio_inclusion_large}*st_area(p.geom))
-                order by st_area(st_intersection(p.geom, q.geom)) desc
-                limit 1
-            )
-            ELSE
-            (
-                select gid from {village}.{input_faces} as q
-                where 
-                    st_area(st_intersection(p.geom, q.geom)) > {void_percent_threshold}*st_area(p.geom)
-                order by st_area(st_intersection(p.geom, q.geom)) desc
-                limit 1
-            )
-        END
-        where survey_gid is NULL
-        ;
-        
-        drop table if exists {output_table};
-        create table {output_table} as 
-        select 
-            survey_gid,
-            st_buffer(
+        sql_query = f'''
+            alter table {input_table}
+            add column if not exists survey_gid int;
+            
+            update {input_table} as p
+            set survey_gid = 
+            CASE
+                WHEN type = 'farm'
+                THEN
+                (
+                    select gid from {village}.{input_faces} as q
+                    where 
+                    (st_area(p.geom) < 10000 
+                    and
+                    st_area(
+                        st_intersection(
+                            p.geom, q.geom
+                        )
+                    ) > {ratio_inclusion_small}*st_area(p.geom))
+                    or  
+                    (st_area(
+                        st_intersection(
+                            p.geom, q.geom
+                        )
+                    ) > {ratio_inclusion_large}*st_area(p.geom))
+                    order by st_area(st_intersection(p.geom, q.geom)) desc
+                    limit 1
+                )
+                ELSE
+                (
+                    select gid from {village}.{input_faces} as q
+                    where 
+                        st_area(st_intersection(p.geom, q.geom)) > {void_percent_threshold}*st_area(p.geom)
+                    order by st_area(st_intersection(p.geom, q.geom)) desc
+                    limit 1
+                )
+            END
+            where survey_gid is NULL
+            ;
+            
+            drop table if exists {output_table};
+            create table {output_table} as 
+            select 
+                survey_gid,
                 st_buffer(
-                    st_union(geom), 
-                    0.01
-                ), 
-                -0.01
-            ) as geom 
-            from {input_table} 
-            where survey_gid is not null
-            group by survey_gid;
-        
-        alter table {output_table}
-        add column gid serial;
-    '''
-    with psql_conn.connection().cursor() as curr:
-        curr.execute(sql_query) 
+                    st_buffer(
+                        st_union(geom), 
+                        0.01
+                    ), 
+                    -0.01
+                ) as geom 
+                from {input_table} 
+                where survey_gid is not null
+                group by survey_gid;
+            
+            alter table {output_table}
+            add column gid serial;
+        '''
+        with psql_conn.connection().cursor() as curr:
+            curr.execute(sql_query)
+        logger.info("Created super polygon")
+    except:
+        logger.error("Error creating super polygon")
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Description for parser")

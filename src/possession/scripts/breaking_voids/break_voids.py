@@ -2,45 +2,57 @@ from config import *
 from src.possession.scripts.cutting_functions import find_splitting_edge
 from utils import *
 from scripts import *
+from possession import *
 import argparse
 
 def break_voids(config, psql_conn, input_onwership_polygons, output_ownership_polygons):
     """ Function to break unassigned farmplots and voids
     """
-    shifted_topo = config.setup_details['pos']['topo']
-    edge = config.setup_details['pos']['edge']
-    village = config.setup_details['setup']['village']
-    transformed_edges = f'{village}_{shifted_topo}.{edge}'
+    try:
+        shifted_topo = config.setup_details['pos']['topo']
+        edge = config.setup_details['pos']['edge']
+        village = config.setup_details['setup']['village']
+        transformed_edges = f'{village}_{shifted_topo}.{edge}'
 
-    sql_query = f'''
-        drop table if exists {output_ownership_polygons};
-        create table {output_ownership_polygons}
-        as select * from {input_onwership_polygons};
-        
-        select 
-            gid 
-        from 
-            {input_onwership_polygons}
-        where
-            survey_gid is NULL
-            and 
-            st_area(geom) > 10000    
-        ;
-    '''
-    with psql_conn.connection().cursor() as curr:
-        curr.execute(sql_query)
-        res = curr.fetchall()
+        sql_query = f'''
+            drop table if exists {output_ownership_polygons};
+            create table {output_ownership_polygons}
+            as select * from {input_onwership_polygons};
+            
+            select 
+                gid 
+            from 
+                {input_onwership_polygons}
+            where
+                survey_gid is NULL
+                and 
+                st_area(geom) > 10000    
+            ;
+        '''
+        with psql_conn.connection().cursor() as curr:
+            curr.execute(sql_query)
+            res = curr.fetchall()
+        logger.info("break_voids() successfully executed")
+    except:
+        logger.error("Error in break_voids()", exc_info=True)
     
-    splitting_at_edges(config, psql_conn, res, input_onwership_polygons, transformed_edges, output_ownership_polygons)
+    try:
+        splitting_at_edges(config, psql_conn, res, input_onwership_polygons, transformed_edges, output_ownership_polygons)
+        logger.info("splitting at edges completed")
+    except:
+        logger.error("error in splitting_at_edges()", exc_info= True)
         
 def splitting_at_edges(config, psql_conn, res, input_onwership_polygons, transformed_edges, output_ownership_polygons):
     village = config.setup_details['setup']['village']
     for (gid,) in res:
-        print(f"Processing {input_onwership_polygons} gid {gid}")
-        edge_id = find_splitting_edge(psql_conn, gid, input_onwership_polygons, transformed_edges)
+        logger.info(f"Processing {input_onwership_polygons} gid {gid}")
+        try:
+            edge_id = find_splitting_edge(psql_conn, gid, input_onwership_polygons, transformed_edges)
+        except:
+            logger.error("could not find splitting edge", exc_info=True)
         if edge_id == -1:
             continue
-        print("chosen edge id",edge_id)
+        logger.info(f"chosen edge id {edge_id}")
         
         sql_query = f'''
             drop table if exists {village}.temp;
