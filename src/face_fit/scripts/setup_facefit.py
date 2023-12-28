@@ -153,42 +153,50 @@ class Setup_Facefit:
     def make_faces(self):
         sql_query=f"""
             select polygonize('{self.topo}');
+            
+            alter table {self.village}.{self.inp}_t
+            add column if not exists face_id integer;
+            
+            update {self.village}.{self.inp}_t
+            set face_id = (select (gettopogeomelements(topo))[1] limit 1);
 
             drop table if exists {self.village}.{self.ori};
             create table {self.village}.{self.ori} as
             
             select
                 face_id,
-                st_makevalid(st_getfacegeometry('{self.topo}', face_id)) as geom
+                geom,
+                survey_no,
+                akarbandh_area,
+                valid,
+                varp,
+                shape_index,
+                farm_intersection,
+                farm_rating
             from
-                {self.topo}.face
+                {self.village}.{self.inp}_t
             where
-                face_id>0
-                and
-                st_perimeter(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) * 
-                    st_perimeter(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) /
-                    st_area(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) < {self.nar_face_shp_index_thresh}
+                power(st_perimeter(geom),2)/st_area(geom) < {self.nar_face_shp_index_thresh}
             ;
-
 
             drop table if exists {self.village}.{self.nar};
             create table {self.village}.{self.nar} as
             
             select
                 face_id,
-                st_makevalid(st_getfacegeometry('{self.topo}', face_id)) as geom
+                geom,
+                survey_no,
+                akarbandh_area,
+                valid,
+                varp,
+                shape_index,
+                farm_intersection,
+                farm_rating
             from
-                {self.topo}.face
+                {self.village}.{self.inp}_t
             where
-                face_id>0
-                and
-                st_area(st_makevalid(st_getfacegeometry('{self.topo}', face_id)))>1
-                and
-                st_perimeter(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) * 
-                    st_perimeter(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) /
-                    st_area(st_makevalid(st_getfacegeometry('{self.topo}', face_id))) > {self.nar_face_shp_index_thresh}
+                power(st_perimeter(geom),2)/st_area(geom) >= {self.nar_face_shp_index_thresh}
             ;
-
 
             drop table if exists {self.village}.{self.nar_mid};
             create table {self.village}.{self.nar_mid} as
@@ -206,38 +214,6 @@ class Setup_Facefit:
         with self.psql_conn.connection().cursor() as curr:
             curr.execute(sql_query)
         
-        sql_query = f"""
-            update {self.village}.{self.ori}
-            set geom = st_multi(geom);
-            
-            alter table {self.village}.{self.ori}
-            add column if not exists survey_no varchar(100) default '',
-            add column if not exists akarbandh_area float,
-            add column if not exists valid bool,
-            add column if not exists varp float,
-            add column if not exists shape_index float,
-            add column if not exists farm_intersection float,
-            add column if not exists farm_rating float;
-            
-            alter table {self.village}.{self.inp}_t
-            add column if not exists face_id integer;
-            
-            update {self.village}.{self.inp}_t
-            set face_id = (select (gettopogeomelements(topo))[1] limit 1);
-            
-            update {self.village}.{self.ori} o
-            set survey_no = a.survey_no,
-                akarbandh_area = a.akarbandh_area,
-                valid = a.valid,
-                varp = a.varp,
-                shape_index = a.shape_index,
-                farm_intersection = a.farm_intersection,
-                farm_rating = a.farm_rating
-            from {self.village}.{self.inp}_t as a
-            where a.face_id=o.face_id;
-        """
-        with self.psql_conn.connection().cursor() as curr:
-            curr.execute(sql_query)
         add_gist_index(self.psql_conn, self.village, self.ori, 'geom')
         add_gist_index(self.psql_conn, self.village, self.nar, 'geom')
 
@@ -258,6 +234,6 @@ if __name__ == "__main__":
     
     village = argument.village
 
-    midlines = setup_facefit(village)
-    midlines.run()
+    fbfs_setup = setup_facefit(village)
+    fbfs_setup.run()
 

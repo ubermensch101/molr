@@ -134,5 +134,5 @@ if __name__=="__main__":
     
     village = argument.village
     
-    datacorrecter = setup_validate()
-    datacorrecter.run()
+    sv = setup_validate()
+    sv.run()

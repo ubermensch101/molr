@@ -105,6 +105,6 @@ if __name__ == "__main__":
     
     village = argument.village
 
-    midlines = farmplot_topo_creator(village)
-    midlines.run()
+    topo_creator = farmplot_topo_creator(village)
+    topo_creator.run()
 

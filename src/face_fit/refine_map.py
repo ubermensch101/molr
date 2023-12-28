@@ -43,7 +43,7 @@ class Face_Fit:
         setup.run()
     
     def run(self):
-        # self.setup_fbfs()
+        self.setup_fbfs()
         create_nodes_table(self.psql_conn, self.village+"."+self.shifted_nodes, self.srid)
         self.fix_gcps()
     

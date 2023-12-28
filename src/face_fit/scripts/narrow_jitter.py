@@ -2,16 +2,16 @@ from config import *
 from utils import *
 import argparse
 
-def fix_gcp(village=""):
+def narrow_jitter(village=""):
     config = Config()
     
     pgconn = PGConn(config)
     if village != "":    
         config.setup_details['setup']['village'] = village
     
-    return Fix_GCP(config,pgconn)
+    return Narrow_Jitter(config,pgconn)
 
-class Fix_GCP:
+class Narrow_Jitter:
     def __init__(self, config: Config, psql_conn: PGConn):
         self.config = config
         self.psql_conn = psql_conn
@@ -49,13 +49,7 @@ class Fix_GCP:
             exit()             
     
     def run(self):
-        get_corner_nodes(self.psql_conn, self.topo, self.village, self.nodes, self.angle_thresh)
-        create_node_labels(self.psql_conn, self.village, self.inp+"_t", self.nodes, self.survey_no, 
-                           self.nodes_label, self.nodes_buf_thresh, self.vb_label, self.gcp_labeling_convention)
-        create_gcp_map(self.psql_conn, self.village, self.nodes, self.gcp, self.gcp_map, self.nodes_label,
-                       self.gcp_label, use_labels=True, delimiter_regex=self.label_delim)
-        add_to_shifted_nodes(self.psql_conn, self.village+"."+self.gcp_map, self.village+"."+self.shifted_nodes,
-                             'node_id', 'gcp_geom', self.srid)
+        pass
         
 if __name__ == "__main__":    
     from face_fit_utils import *
@@ -69,8 +63,8 @@ if __name__ == "__main__":
     
     village = argument.village
 
-    gcp_fixing = fix_gcp(village)
-    gcp_fixing.run()
+    narrow = narrow_jitter(village)
+    narrow.run()
 
 else:
     from .face_fit_utils import *
