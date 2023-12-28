@@ -13,5 +13,6 @@
     "corner_nodes_angle_thresh":"45",
     "corner_nodes_label_column":"label",
     "corner_nodes_label_buf_thresh":"0.1",
-    "gcp_map_table":"gcp_mapping"
+    "gcp_map_table":"gcp_mapping",
+    "shifted_nodes_table":"shifted_nodes"
 }

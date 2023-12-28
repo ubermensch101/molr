@@ -2,16 +2,16 @@ from config import *
 from utils import *
 import argparse
 
-def get_gcp_map(village=""):
+def fix_gcp(village=""):
     config = Config()
     
     pgconn = PGConn(config)
     if village != "":    
         config.setup_details['setup']['village'] = village
     
-    return Get_GCP_Map(config,pgconn)
+    return Fix_GCP(config,pgconn)
 
-class Get_GCP_Map:
+class Fix_GCP:
     def __init__(self, config: Config, psql_conn: PGConn):
         self.config = config
         self.psql_conn = psql_conn
@@ -32,6 +32,7 @@ class Get_GCP_Map:
         self.gcp_labeling_convention = self.config.setup_details['val']['gcp_label_convention']
         self.gcp_map = self.config.setup_details['fbfs']['gcp_map_table']
         self.label_delim = self.config.setup_details['val']['label_delimiter']
+        self.shifted_nodes = self.config.setup_details['fbfs']['shifted_nodes_table']
 
         self.tol = self.config.setup_details['fbfs']['topo_tol']
         self.seg_tol = self.config.setup_details['fbfs']['seg_tol']
@@ -41,7 +42,8 @@ class Get_GCP_Map:
         
         self.angle_thresh = self.config.setup_details['fbfs']['corner_nodes_angle_thresh']
         self.survey_no = self.config.setup_details['val']['survey_no_label']
-
+        self.srid = self.config.setup_details['setup']['srid']
+        
         if self.village == "":
             print("ERROR")
             exit()             
@@ -52,8 +54,12 @@ class Get_GCP_Map:
                            self.nodes_label, self.nodes_buf_thresh, self.vb_label, self.gcp_labeling_convention)
         create_gcp_map(self.psql_conn, self.village, self.nodes, self.gcp, self.gcp_map, self.nodes_label,
                        self.gcp_label, use_labels=True, delimiter_regex=self.label_delim)
+        add_to_shifted_nodes(self.psql_conn, self.village+"."+self.gcp_map, self.village+"."+self.shifted_nodes,
+                             'node_id', 'node_geom', self.srid)
         
-if __name__ == "__main__":
+if __name__ == "__main__":    
+    from face_fit_utils import *
+    
     parser = argparse.ArgumentParser(description="Description for my parser")
 
     parser.add_argument("-v", "--village", help="Village name",
@@ -63,6 +69,9 @@ if __name__ == "__main__":
     
     village = argument.village
 
-    midlines = get_gcp_map(village)
+    midlines = fix_gcp(village)
     midlines.run()
+
+else:
+    from .face_fit_utils import *
 
