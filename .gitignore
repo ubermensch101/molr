@@ -5,3 +5,6 @@ __pycache__
 */*/*/*/__pycache__
 
 molr.egg-info
+venv
+config/setup.json
+config/psql.json
