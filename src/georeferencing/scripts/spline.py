@@ -73,14 +73,13 @@ class Spline:
         source_points = source_points_all
         target_points = target_points_all
 
-        tps_model_x = ThinPlateSpline(alpha=0.0)
-        tps_model_x.fit(np.array(source_points), np.array(list(zip(*target_points))[0]))
+        tps_model = ThinPlateSpline(alpha=0.0)
+        tps_model.fit(np.array(source_points), np.array(target_points))
 
-        tps_model_y = ThinPlateSpline(alpha=0.0)
-        tps_model_y.fit(np.array(source_points),np.array(list(zip(*target_points))[1]))
-
-        transformed_points = [(x[0], y[0]) for x, y in zip(tps_model_x.transform(points), tps_model_y.transform(points))]
-        transformed_points = [(i[0], (i[1][0], j)) for i, j in zip(points_with_path, list(transformed_points))]
+        transformed_points = tps_model.transform(points)
+        transformed_points = [(i[0], (i[1][0], j)) for i, j in zip(
+            points_with_path, list(transformed_points))]
+        
         df = pd.DataFrame(transformed_points, columns=["gid", "path_point"])
         recreate_table( self.psql_conn, self.schema_name, input, self.temp_georeferencing_schema, output+f"_{count}", df)
         excess_area = excess_area_without_parameters(self.psql_conn, self.temp_georeferencing_schema, output+f"_{count}", self.farmplots, self.schema_name)
@@ -93,14 +92,13 @@ class Spline:
             source_points = [source_points_all[i] for i in comb]
             target_points = [target_points_all[i] for i in comb]
             
-            tps_model_x = ThinPlateSpline(alpha=0.0)
-            tps_model_x.fit(np.array(source_points), np.array(list(zip(*target_points))[0]))
+            tps_model = ThinPlateSpline(alpha=0.0)
+            tps_model.fit(np.array(source_points), np.array(target_points))
 
-            tps_model_y = ThinPlateSpline(alpha=0.0)
-            tps_model_y.fit(np.array(source_points),np.array(list(zip(*target_points))[1]))
-
-            transformed_points = [(x[0], y[0]) for x, y in zip(tps_model_x.transform(points), tps_model_y.transform(points))]
-            transformed_points = [(i[0], (i[1][0], j)) for i, j in zip(points_with_path, list(transformed_points))]
+            transformed_points = tps_model.transform(points)
+            transformed_points = [(i[0], (i[1][0], j)) for i, j in zip(
+                points_with_path, list(transformed_points))]
+            
             df = pd.DataFrame(transformed_points, columns=["gid", "path_point"])
             recreate_table(self.psql_conn, self.schema_name, input, self.temp_georeferencing_schema, output+f"_{count}", df)
             excess_area = excess_area_without_parameters(self.psql_conn, self.temp_georeferencing_schema, output+f"_{count}", self.farmplots, self.schema_name)
