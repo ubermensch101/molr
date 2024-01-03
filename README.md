@@ -7,7 +7,7 @@ Structure:
 
 Installation flow: always at root
 1. Create a venv using "python3 -m venv venv"
-2. Activate venv usin "source venv/bin/active"
+2. Activate venv usin "source venv/bin/activate"
 3. pip install the required packages:
 - scipy
 - pandas
