@@ -1,0 +1,7 @@
+scipy
+pandas
+psycopg2-binary
+openpyxl
+thin-plate-spline
+scikit-learn
+opencv-python
