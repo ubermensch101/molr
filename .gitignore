@@ -8,3 +8,4 @@ molr.egg-info
 venv
 config/setup.json
 config/psql.json
+src/georeferencing/logfile.log
