@@ -38,7 +38,7 @@ class Polynomial:
     def survey_jitter_higher_order(self, input, gcpmap, output, degree):
         gcp_map = self.schema_name + "." + gcpmap
         sql = f'''
-            select st_x(geom),st_y(geom) from {gcp_map}
+            select st_x(node_geom),st_y(node_geom) from {gcp_map}
         '''
         with self.psql_conn.connection().cursor() as curr:
             curr.execute(sql)

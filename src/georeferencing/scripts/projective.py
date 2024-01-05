@@ -40,7 +40,7 @@ class Projective:
         original_output_name =  output
         output_table = self.temp_georeferencing_schema+"."+output
         sql = f'''
-            select st_x(geom),st_y(geom) from {gcp_map}
+            select st_x(node_geom),st_y(node_geom) from {gcp_map}
         '''
         with self.psql_conn.connection().cursor() as curr:
             curr.execute(sql)

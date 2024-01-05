@@ -5,6 +5,7 @@
     "survey_shifted": "survey_shifted",
     "survey_shifted_vertices":"survey_shifted_vertices",
     "survey_jitter_vertices":"survey_jitter_vertices",
+    "survey_label_column": "survey_no" , 
     "gcp_label_toggle": "True",
     "gcp_map": "gcp_map",
     "delimiter": "-|," ,

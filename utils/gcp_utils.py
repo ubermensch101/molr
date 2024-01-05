@@ -191,7 +191,7 @@ def create_gcp_map(psql_conn, schema, nodes_table, gcp_table, output_map_table, 
             curr.execute(sql)
     
     else:
-        create_distance_gcp_map()
+        create_distance_gcp_map(psql_conn, schema, nodes_table, gcp_table, output_map_table)
         
 def create_distance_gcp_map(psql_conn,  schema, nodes_table, gcp_table, output_map_table, distance_thresh=30):
     
@@ -229,7 +229,7 @@ def add_gcp_label(psql_conn, schema, nodes_table, gcp_table, output_map_table,
     
     if not overwrite and check_column_exists(psql_conn, schema, gcp_table, gcp_label_column):
         print(f"Column {gcp_label_column} already exists and can't overwrite, skipping")
-        
+        return
     add_column(psql_conn, schema+'.'+gcp_table, gcp_label_column, 'varchar(100)')
     
     if not check_column_exists(psql_conn, schema, nodes_table, nodes_label_column):

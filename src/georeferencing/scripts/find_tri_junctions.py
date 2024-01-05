@@ -10,10 +10,10 @@ def trijunctions(gcp_label_toggle):
     if gcp_label_toggle != "":
         config.setup_details['georef']['gcp_label_toggle'] = gcp_label_toggle
     pgconn = PGConn(config)
-    obj = Trijunctions(config,pgconn)
+    obj = Trijunctions_and_Map(config,pgconn)
     return obj
 
-class Trijunctions:
+class Trijunctions_and_Map:
     def __init__(self,config,psql_conn):
         self.config = config
         self.psql_conn = psql_conn
@@ -23,147 +23,30 @@ class Trijunctions:
         self.survey_shifted_vertices = self.config.setup_details['georef']['survey_shifted_vertices']
         self.survey_jitter_vertices = self.config.setup_details['georef']['survey_jitter_vertices']
         self.option = self.config.setup_details['georef']['gcp_label_toggle']
+        self.survey_label_column = self.config.setup_details['georef']['survey_label_column'] 
+        self.gcp_map = self.config.setup_details['georef']['gcp_map']
+        self.gcp = self.config.setup_details['data']['gcp_table']
 
     def find_tri_junctions(self, input, topo_name, output):
-        self.add_village_boundary(input)
         create_topo(self.psql_conn, self.schema_name, topo_name, input)
-        input_topo_schema = topo_name
-        output_table = self.schema_name + "." + output
-        sql = f'''
-            drop table if exists {output_table};
-            create table {output_table} as
-
-            with neigh as (
-                select
-                    count(edge_id),
-                    node_id
-                from
-                    {input_topo_schema}.edge as p,
-                    {input_topo_schema}.node
-                where
-                    start_node = node_id
-                    or end_node = node_id
-                group by
-                    node_id
-            )
-
-            select
-                r.node_id as node_id,
-                r.geom as geom
-            from
-                {input_topo_schema}.node as r,
-                neigh
-            where
-                r.node_id = neigh.node_id
-                and
-                neigh.count > 2
-            ;
-        '''
-        with self.psql_conn.connection().cursor() as curr:
-            curr.execute(sql)
-        self.mapping = self.create_label_for_vertices(output, input )
-        self.remove_village_boundary(input)
-
-    def add_village_boundary(self, input):
-        table = self.schema_name + "." + input
-        sql = f'''
-            with bounding_box as
-            (SELECT 
-                st_expand(
-                    st_setSRID(
-                        st_extent(geom),
-                        32643),
-                    10) 
-                AS geom FROM {table}
-            )
-            ,outer_polygon as
-            (select
-                st_multi(st_difference(
-                    (select geom from bounding_box),
-                    (select st_makepolygon(st_exteriorring(st_union(geom))) from {table})     
-                )) as geom
-            )
-            insert into {table} (gid,survey_no,geom)
-            values(999,(select 'vb'),(select geom from outer_polygon));
-        '''
-        with self.psql_conn.connection().cursor() as curr:
-                curr.execute(sql)
-        
-    def create_label_for_vertices(self, input, reference ):
-        input_table = self.schema_name + "." + input
-        reference_table = self.schema_name + "." + reference
-        sql = f'''
-            alter table {input_table}
-            add column if not exists label varchar(100); 
-        '''
-        with self.psql_conn.connection().cursor() as curr:
-            curr.execute(sql)
-
-        sql = f'''
-            select node_id from {input_table}; 
-        '''
-        with self.psql_conn.connection().cursor() as curr:
-            curr.execute(sql)
-            node_ids = curr.fetchall()
-        mapping = []
-        for res in node_ids:
-            node_id = res[0]
-            sql = f'''
-                select 
-                survey_no 
-                from 
-                    {reference_table}
-                where 
-                    st_intersects(geom,(select st_buffer(geom,0.1) from {input_table} where node_id = {node_id}))
-            '''
-            with self.psql_conn.connection().cursor() as curr:
-                curr.execute(sql)
-                bordering_survey_no = curr.fetchall()
-            survey_no = []
-            if len(bordering_survey_no) >= 3:
-                for j in bordering_survey_no:
-                    if j[0] is not None:
-                        if j[0][0]=='G':
-                            survey_no.append('g')
-                        elif j[0][0]=='S':
-                            survey_no.append('rv')
-                        elif j[0][0]=='R':
-                            survey_no.append('rd')
-                        else:
-                            survey_no.append(j[0])    
-                            
-                survey_no.sort()
-                mapping.append([node_id, survey_no])
-            vertex_label = "-".join([str(i) for i in survey_no])
-            sql = f'''
-                update {input_table}
-                set label = '{vertex_label}'
-                where node_id = {node_id};
-            '''
-            with self.psql_conn.connection().cursor() as curr:
-                curr.execute(sql)
-
-        return mapping
+        get_corner_nodes(self.psql_conn, topo_name, self.schema_name, output, only_trijunctions=True)
+        create_node_labels(self.psql_conn, self.schema_name, input, output)
     
-    def remove_village_boundary(self, input):
-        table = self.schema_name+"."+input
-        sql = f'''
-            delete from {table}
-            where
-            survey_no = 'vb';
-        '''
-        with self.psql_conn.connection().cursor() as curr:
-            curr.execute(sql)
 
     def run(self):
         if self.option=="True":
             used_map = self.survey_shifted
             used_map_vertices = self.survey_shifted_vertices
+            toggle = True
         elif self.option == "False" :
             used_map = self.survey_jitter
             used_map_vertices = self.survey_jitter_vertices
+            toggle = False
         topo_name = self.schema_name+"_"+used_map+"_topo"
         self.find_tri_junctions(used_map, topo_name, used_map_vertices)
+        create_gcp_map(self.psql_conn, self.schema_name, used_map_vertices, self.gcp, self.gcp_map, use_labels = toggle)
+        add_gcp_label(self.psql_conn, self.schema_name, used_map_vertices, self.gcp, self.gcp_map )
+
 
 
 

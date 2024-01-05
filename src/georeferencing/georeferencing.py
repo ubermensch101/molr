@@ -35,10 +35,8 @@ class Georeferencer:
 
     def georef_using_gcps(self):
         create_schema(self.psql_conn, self.schema_name + self.config.setup_details['georef']['temp_georeferencing_schema'], True)
-        tri = Trijunctions(self.config, self.psql_conn)
+        tri = Trijunctions_and_Map(self.config, self.psql_conn)
         tri.run()
-        gcpmap = GCP_map(self.config,self.psql_conn)
-        gcpmap.run()
         gcps_used_jitter = []
         gcps_used_polynomial_1 = []
         gcps_used_polynomial_2 = []

@@ -21,7 +21,7 @@ def gcp_trijunction_match(config, psql_conn):
     if gcp_label_toggle == "False":
         return
     elif gcp_label_toggle == "True":
-        obj = Trijunctions(config, psql_conn)
+        obj = Trijunctions_and_Map(config, psql_conn)
         obj.find_tri_junctions(obj.survey_jitter, obj.schema_name+"_"+obj.survey_jitter+"_topo", obj.survey_jitter_vertices )
         survey_jitter_vertices = schema + "." + obj.survey_jitter_vertices
         sql = f'''
