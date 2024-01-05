@@ -1,4 +1,6 @@
 {
+    "narrow_face_method":"jitter",
+    "face_fit_method":"snap",
     "input_table":"survey_georeferenced",
     "input_topo_suffix":"_survey_topo",
     "original_faces_table":"original_faces",
@@ -15,6 +17,15 @@
     "corner_nodes_label_column":"label",
     "corner_nodes_label_buf_thresh":"0.1",
     "gcp_map_table":"gcp_mapping",
-    "shifted_nodes_table":"shifted_nodes",
-    "cadastral_topo":"_cadastral_topo"
+    "covered_nodes_table":"covered_nodes",
+    "covered_edges_table":"covered_edges",
+    "covered_faces_table":"covered_faces",
+    "face_node_map_table":"face_node_map",
+    "visited_faces_table":"visited_faces",
+    "possible_node_snaps":"possible_node_snaps",
+    "best_nodes_table":"best_nodes_table",
+    "best_face_table":"best_face_table",
+    "temp_nodes_table":"temp_nodes_table",
+    "temp_face_table":"temp_face_table",
+    "shifted_faces_table":"shifted_faces"
 }

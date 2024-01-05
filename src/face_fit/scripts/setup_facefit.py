@@ -17,6 +17,7 @@ class Setup_Facefit:
         self.psql_conn = psql_conn
         self.village = self.config.setup_details['setup']['village']
         self.farmplots = self.config.setup_details['data']['farmplots_table']
+        self.srid = config.setup_details['setup']['srid']
         
         self.inp = self.config.setup_details['fbfs']['input_table']
         self.ori = self.config.setup_details['fbfs']['original_faces_table']
@@ -28,7 +29,11 @@ class Setup_Facefit:
         self.seg_tol = self.config.setup_details['fbfs']['seg_tol']
         self.seg_length = self.config.setup_details['fbfs']['seg_length']
         self.nar_face_shp_index_thresh = self.config.setup_details['fbfs']['nar_face_shp_index_thresh']
-        self.intersection_thresh = self.config.setup_details['fbfs']['survey_no_assignment_intersection_thresh']
+
+        self.covered_nodes = config.setup_details['fbfs']['covered_nodes_table']
+        self.covered_edges = config.setup_details['fbfs']['covered_edges_table']
+        self.covered_faces = config.setup_details['fbfs']['covered_faces_table']
+        self.face_node_map = config.setup_details['fbfs']['face_node_map_table']
 
         if self.village == "":
             print("ERROR")
@@ -168,11 +173,7 @@ class Setup_Facefit:
                 geom,
                 survey_no,
                 akarbandh_area,
-                valid,
-                varp,
-                shape_index,
-                farm_intersection,
-                farm_rating
+                valid
             from
                 {self.village}.{self.inp}_t
             where
@@ -187,11 +188,7 @@ class Setup_Facefit:
                 geom,
                 survey_no,
                 akarbandh_area,
-                valid,
-                varp,
-                shape_index,
-                farm_intersection,
-                farm_rating
+                valid
             from
                 {self.village}.{self.inp}_t
             where
@@ -223,6 +220,12 @@ class Setup_Facefit:
         for _ in range(7):
             self.clean_nodes()
         self.make_faces()
+        
+        create_nodes_table(self.psql_conn, self.village, self.covered_nodes, self.srid)
+        create_edges_table(self.psql_conn, self.village, self.covered_edges, self.srid)
+        create_faces_table(self.psql_conn, self.village, self.covered_faces, self.srid)
+        
+        create_face_node_map(self.psql_conn, self.village, self.face_node_map, self.topo)
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Description for my parser")

@@ -115,53 +115,9 @@ class Georeferencer:
         
     def setup_validate(self):
         add_varp(self.psql_conn, self.schema_name, self.survey_georeferenced, 'varp')
-        georef = self.schema_name + '.' + self.survey_georeferenced
-        farmplots = self.schema_name + '.' + self.farmplots
-        sql = f'''
-            alter table {georef}
-            add column if not exists shape_index float,
-            add column if not exists farm_intersection float,
-            add column if not exists farm_rating float;
-            
-            update {georef} a
-            set farm_rating = (
-                select 
-                    avg(
-                        greatest(
-                            st_area(
-                                st_intersection(
-                                    a.geom,
-                                    b.geom
-                                )
-                            )/st_area(b.geom),
-                            st_area(
-                                st_difference(
-                                    b.geom,
-                                    a.geom
-                                )
-                            )/st_area(b.geom)
-                        )
-                    )
-                from
-                    {farmplots} as b
-                where
-                    st_intersects(st_buffer(st_boundary(a.geom),20), b.geom)
-            ),
-            farm_intersection = (
-                select 
-                    st_area(
-                        st_intersection(
-                            a.geom,
-                            b.geom
-                        )
-                    )/st_area(a.geom)
-                from 
-                    (select st_collect(geom) as geom from {farmplots}) as b
-            ),
-            shape_index = st_perimeter(geom)*st_perimeter(geom)/st_area(geom);
-        '''
-        with self.psql_conn.connection().cursor() as curr:
-            curr.execute(sql)
+        add_farm_intersection(self.psql_conn, self.schema_name, self.survey_georeferenced, self.farmplots, 'farm_intersection')
+        add_farm_rating(self.psql_conn, self.schema_name, self.survey_georeferenced, self.farmplots, 'farm_rating')
+        add_shape_index(self.psql_conn, self.schema_name, self.survey_georeferenced, 'shape_index')
         
     
 if __name__=="__main__":

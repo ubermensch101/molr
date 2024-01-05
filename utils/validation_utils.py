@@ -19,8 +19,70 @@ def add_akarbandh(psql_conn, input_table, akarbandh_table, akarbandh_col, common
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql)
         
+def add_farm_intersection(psql_conn, schema, input_table, farmplots, column_name):
+
+    add_column(psql_conn, schema+'.'+input_table, column_name, 'float')
+
+    sql = f"""
+        update {schema}.{input_table} as a
+        set {column_name} = (
+            select 
+                st_area(
+                    st_intersection(
+                        a.geom,
+                        b.geom
+                    )
+                )/st_area(a.geom)
+            from 
+                (select st_collect(geom) as geom from {farmplots}) as b
+        );
+    """
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        
 def add_farm_rating(psql_conn, schema, input_table, farmplots, column_name):
-    pass
+    
+    add_column(psql_conn, schema+'.'+input_table, column_name, 'float')
+
+    sql = f"""
+        update {schema}.{input_table} as a
+        set {column_name} = (
+            select 
+                avg(
+                    greatest(
+                        st_area(
+                            st_intersection(
+                                a.geom,
+                                b.geom
+                            )
+                        )/st_area(b.geom),
+                        st_area(
+                            st_difference(
+                                b.geom,
+                                a.geom
+                            )
+                        )/st_area(b.geom)
+                    )
+                )
+            from
+                {schema}.{farmplots} as b
+            where
+                st_intersects(st_buffer(st_boundary(a.geom),20), b.geom)
+        );
+    """
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        
+def add_shape_index(psql_conn, schema, input_table, column_name):
+    
+    add_column(psql_conn, schema+'.'+input_table, column_name, 'float')
+
+    sql = f"""
+        update {schema}.{input_table} as a
+        set {column_name} = st_perimeter(geom)*st_perimeter(geom)/st_area(geom);    
+    """
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
         
 def calculate_varp_of_individual(points_list):
     points = points_list
@@ -66,7 +128,7 @@ def get_all_gids(psql_conn, input_table):
 def add_varp(psql_conn, schema, input_table, column_name):
     farm_gids = get_all_gids(psql_conn, schema+'.'+input_table)
     
-    add_column(psql_conn, schema+'.'+input_table, f'{column_name}', 'float')
+    add_column(psql_conn, schema+'.'+input_table, column_name, 'float')
     
     varp_sum = 0
     
