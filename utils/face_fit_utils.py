@@ -397,3 +397,113 @@ def check_face_valid(psql_conn, face_id, schema, table, covered_faces, covered_e
         return False
 
     return True
+
+def average_translate_face_nodes(psql_conn, schema, topo_schema,
+                                 face_id, face_node_map, covered_nodes, output_nodes_table,
+                                 nodes_geom_table=None):
+    if nodes_geom_table==None:
+        sql = f"""
+            drop table if exists {schema}.{output_nodes_table};
+            create table {schema}.{output_nodes_table} as
+            
+            with nodes as (
+                select
+                    node_id
+                from
+                    {schema}.{face_node_map}
+                where
+                    face_id = {face_id}
+            ),
+            geom_nodes as (
+                select
+                    n.node_id as node_id,
+                    cn.geom as shifted_geom,
+                    tn.geom as original_geom
+                from
+                    nodes as n
+                left join
+                    {schema}.{covered_nodes} as cn
+                    on n.node_id = cn.node_id
+                left join
+                    {topo_schema}.node as tn
+                    on n.node_id = tn.node_id
+            ),
+            average_translate as (
+                select
+                    avg(st_x(shifted_geom)-st_x(original_geom)) as delta_x,
+                    avg(st_y(shifted_geom)-st_y(original_geom)) as delta_y
+                from
+                    geom_nodes as n
+            )
+            select
+                n.node_id as node_id,
+                case
+                    when n.shifted_geom is null 
+                        then st_translate(n.original_geom, a.delta_x, a.delta_y)
+                    else n.shifted_geom
+                end as geom
+            from
+                average_translate as a,
+                geom_nodes as n
+            ;
+        """
+    else:
+        sql = f"""
+            drop table if exists {schema}.{output_nodes_table};
+            create table {schema}.{output_nodes_table} as
+            
+            with average_translate as (
+                select
+                    coalesce(avg(st_x(shifted_geom)-st_x(original_geom)),0) as delta_x,
+                    coalesce(avg(st_y(shifted_geom)-st_y(original_geom)),0) as delta_y
+                from
+                    {schema}.{nodes_geom_table} as n
+            )
+            select
+                n.node_id as node_id,
+                case
+                    when n.shifted_geom is null 
+                        then st_translate(n.original_geom, a.delta_x, a.delta_y)
+                    else n.shifted_geom
+                end as geom
+            from
+                average_translate as a,
+                {schema}.{nodes_geom_table} as n
+            ;
+        """
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        
+def get_nodes_geom(psql_conn, schema, topo_schema, temp_nodes_geom_table, 
+                   face_node_map, covered_nodes, face_id):
+    sql = f"""
+        drop table if exists {schema}.{temp_nodes_geom_table};
+        create table {schema}.{temp_nodes_geom_table} as 
+        
+        with nodes as (
+            select
+                node_id as node_id
+            from
+                {schema}.{face_node_map}
+            where
+                face_id = {face_id}
+        )
+        
+        select
+            n.node_id as node_id,
+            cn.geom as shifted_geom,
+            tn.geom as original_geom
+        from
+            nodes as n
+        left join
+            {schema}.{covered_nodes} as cn
+            on n.node_id = cn.node_id
+        left join
+            {topo_schema}.node as tn
+            on n.node_id = tn.node_id
+        ;
+    """
+    with psql_conn.connection().cursor() as curr:
+        curr.execute(sql)
+        nodes_list = curr.fetchall()
+    return nodes_list
