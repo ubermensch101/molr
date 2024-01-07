@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 from utils import *
-from  .georef_utils import *
+from .georef_utils import *
 import argparse
 
 def polynomial(village, gcp_label_toggle):

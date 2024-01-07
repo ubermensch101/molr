@@ -39,16 +39,15 @@ class Face_Fit:
         #     one_off.run()
     
     def fix_original_faces(self):
-        # if self.face_fit_method=="snap":
-        #     snap_fit = Snap_Fit(self.config, self.psql_conn)
-        #     snap_fit.run()
+        if self.face_fit_method=="snap":
+            snap_fit = Snap_Fit(self.config, self.psql_conn)
+            snap_fit.run()
         # elif self.face_fit_method=="jitter_spline":
         #     jit_spline = Jitter_Spline(self.config, self.psql_conn)
         #     jit_spline.run()
         # elif self.face_fit_method=="jitter_midline":
         #     jit_midline = Jitter_Midline(self.config, self.psql_conn)
         #     jit_midline.run()
-        pass
     
     def setup_fbfs(self):
         setup = Setup_Facefit(self.config,self.psql_conn)
@@ -61,10 +60,19 @@ class Face_Fit:
         add_shape_index(self.psql_conn, self.village, self.shifted_faces, 'shape_index')
         
     def run(self):
+        print("-----RUNNING SETUP-----")
         self.setup_fbfs()
+        
+        print("-----RUNNING FIX GCPS-----")
         self.fix_gcps()
-        self.fix_narrow_faces()
+        
+        print("-----RUNNING FIX NARROW FACES-----")
+        # self.fix_narrow_faces()
+        
+        print("-----RUNNING FIX ORIGINAL FACES-----")
         self.fix_original_faces()
+        
+        print("-----RUNNING VALIADTE-----")
         self.validate()
     
 if __name__=="__main__":

@@ -27,5 +27,13 @@
     "best_face_table":"best_face_table",
     "temp_nodes_table":"temp_nodes_table",
     "temp_face_table":"temp_face_table",
-    "shifted_faces_table":"shifted_faces"
+    "shifted_faces_table":"shifted_faces",
+    "temp_nodes_geom_table":"temp_nodes_geom",
+    "temp_translate_nodes":"temp_translate_nodes",
+    "temp_possible_snaps":"temp_possible_snaps",
+    "filtered_temp_possible_snaps":"filtered_temp_possible_snaps",
+    "snap_buffer_thresh":"30",
+    "point_in_void_distance_thresh":"7",
+    "possible_snaps_thresh_1":"5",
+    "possible_snaps_thresh_2":"2"
 }

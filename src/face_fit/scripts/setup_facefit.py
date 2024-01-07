@@ -211,8 +211,12 @@ class Setup_Facefit:
         with self.psql_conn.connection().cursor() as curr:
             curr.execute(sql_query)
         
+        add_column(self.psql_conn, self.village+'.'+self.ori, 'gid','serial')
+        add_column(self.psql_conn, self.village+'.'+self.nar, 'gid','serial')
         add_gist_index(self.psql_conn, self.village, self.ori, 'geom')
         add_gist_index(self.psql_conn, self.village, self.nar, 'geom')
+        add_varp(self.psql_conn, self.village, self.ori, 'varp')
+        add_varp(self.psql_conn, self.village, self.nar, 'varp')
 
     def run(self):
         create_topo(self.psql_conn, self.village, self.topo, self.inp, self.tol)

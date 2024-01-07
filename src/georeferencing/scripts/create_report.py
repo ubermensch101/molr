@@ -1,4 +1,3 @@
-from .create_gcp_map import *
 from .find_tri_junctions import *
 
 

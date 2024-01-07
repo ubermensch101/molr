@@ -34,7 +34,7 @@ def add_farm_intersection(psql_conn, schema, input_table, farmplots, column_name
                     )
                 )/st_area(a.geom)
             from 
-                (select st_collect(geom) as geom from {farmplots}) as b
+                (select st_collect(geom) as geom from {schema}.{farmplots}) as b
         );
     """
     with psql_conn.connection().cursor() as curr:
@@ -108,8 +108,8 @@ def get_all_gids(psql_conn, input_table):
     table = input_table.split('.')[1]
     
     if not check_column_exists(psql_conn, schema, table, 'gid'):
-        print('GID does not exist')
-        exit()
+        print(f'GID does not exist in table {input_table}. Adding it as column name gid')
+        add_column(psql_conn, input_table, 'gid', 'serial')
         
     sql = f'''
         select gid from {input_table};

@@ -322,7 +322,7 @@ def get_face(psql_conn, topo, face_id, schema, output_table, input_table, input_
                 t.seq as seq,
                 t.edge_id as edge_id
             from
-                st_getfaceedges({topo},{face_id}) as t(seq, edge_id)
+                st_getfaceedges('{topo}',{face_id}) as t(seq, edge_id)
         ),
         new_edges as (
             select
@@ -346,7 +346,7 @@ def get_face(psql_conn, topo, face_id, schema, output_table, input_table, input_
         
         select
             {face_id} as face_id,
-            st_makevalid((st_dump(st_polyginize(geom))).geom) as geom
+            st_makevalid((st_dump(st_polygonize(geom))).geom) as geom
         from
             new_edges
         limit
@@ -365,6 +365,7 @@ def check_face_valid(psql_conn, face_id, schema, table, covered_faces, covered_e
         validity = curr.fetchone()
     
     if validity is None or not validity[0]:
+        print("Table or geom not valid")
         return False
     
     sql = f"""
@@ -373,14 +374,17 @@ def check_face_valid(psql_conn, face_id, schema, table, covered_faces, covered_e
                 st_collect(st_collect(f.geom),st_collect(e.geom)) as geom
             from
                 {schema}.{covered_faces} as f,
-                {schema}.{covered_edges} as e,
+                {schema}.{covered_edges} as e
         )
         select 
-            st_intersects(
-                st_buffer(
-                    p.geom,-0.2, 'join=mitre'
-                ), 
-                c.geom
+            coalesce(
+                st_intersects(
+                    st_buffer(
+                        p.geom,-0.02, 'join=mitre'
+                    ), 
+                    c.geom
+                ),
+                false
             )
         from
             {schema}.{table} as p,
@@ -393,7 +397,8 @@ def check_face_valid(psql_conn, face_id, schema, table, covered_faces, covered_e
         curr.execute(sql)
         validity = curr.fetchone()
     
-    if validity is None or not validity[0]:
+    if validity is None or validity[0]:
+        print("Lies in covered area")
         return False
 
     return True
@@ -430,8 +435,8 @@ def average_translate_face_nodes(psql_conn, schema, topo_schema,
             ),
             average_translate as (
                 select
-                    avg(st_x(shifted_geom)-st_x(original_geom)) as delta_x,
-                    avg(st_y(shifted_geom)-st_y(original_geom)) as delta_y
+                    coalesce(avg(st_x(shifted_geom)-st_x(original_geom)),0) as delta_x,
+                    coalesce(avg(st_y(shifted_geom)-st_y(original_geom)),0) as delta_y
                 from
                     geom_nodes as n
             )
@@ -505,5 +510,3 @@ def get_nodes_geom(psql_conn, schema, topo_schema, temp_nodes_geom_table,
     """
     with psql_conn.connection().cursor() as curr:
         curr.execute(sql)
-        nodes_list = curr.fetchall()
-    return nodes_list

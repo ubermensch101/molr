@@ -1,6 +1,5 @@
 from config import *
 from utils import *
-from helper_classes import *
 import argparse
 from itertools import product
 
@@ -45,7 +44,6 @@ class Snap_Fit:
             
     def setup_snap_fit(self):
         # add all field which are to be tracked
-        add_varp(self.psql_conn, self.village, self.ori, 'varp')
         sql = f"""
             drop table if exists {self.village}.{self.visited_faces};
             create table {self.village}.{self.visited_faces} (face_id integer primary key);
@@ -111,8 +109,9 @@ class Snap_Fit:
         possible_node_snaps_table = self.config.setup_details['fbfs']['possible_node_snaps']
         
         ns = Node_Selector(self.config, self.psql_conn)
-        node_ids, possible_snap_ids = ns.get_possible_snaps(face_id, self.village, 
-                                                            possible_node_snaps_table)
+        possible_snaps = ns.get_possible_snaps(face_id, self.village+'.'+possible_node_snaps_table)
+        possible_snap_ids = [i[1] for i in possible_snaps]
+        node_ids = [i[0] for i in possible_snaps]
         
         best_metrics = [0, 0, 0, 0]
         best_face_nodes_table = self.config.setup_details['fbfs']['best_nodes_table'] 
@@ -128,7 +127,6 @@ class Snap_Fit:
             
             for j, node_id in enumerate(node_ids):
                 # add in temp_shifted_nodes the geom corresponding to id i[j] for node_id
-                # make the face
                 sql = f"""
                     with point as (
                         select
@@ -158,16 +156,19 @@ class Snap_Fit:
                      temp_face_nodes_table, 'node_id', 'geom')
             validity = check_face_valid(self.psql_conn, face_id, self.village, temp_face_table, 
                              self.covered_faces, self.covered_edges)
+            print("Face stored in :-",temp_face_table," Validity:-",validity)
+            a = input("Press Enter to continue : ")
             if not validity:
                 continue
             
-            metrics = self.evaluate_face(face_id, self.village, temp_face_table, self.farmplots, self.inp)
-            
+            metrics = self.evaluate_face(self.village, temp_face_table, self.farmplots, self.ori)
+            print(metrics)
             if self.compare_metrics(metrics,best_metrics,thresholds):
                 copy_table(self.psql_conn, self.village+'.'+temp_face_nodes_table, 
                            self.village+'.'+best_face_nodes_table)
                 copy_table(self.psql_conn, self.village+'.'+temp_face_table, 
                            self.village+'.'+best_face_table)
+                best_metrics = metrics
             
         if best_metrics == [0,0,0,0]:
             print(f"skipping face {face_id}")
@@ -198,21 +199,26 @@ class Snap_Fit:
             curr.execute(sql)
         
     def run(self):
+        print("-----RUNNING SETUP SNAP FIT-----")
         self.setup_snap_fit()
         
         thresholds = [0.96, 0.8, 10, 500]
         
-        sched = Face_Schedular(self.config, self.psql_conn)
+        print("-----SETTING UP FACE SCHEDULER-----")
+        sched = Face_Scheduler(self.config, self.psql_conn)
+        
         while True:
+            
             next_face_id = sched.next_face()
             if next_face_id == None:
                 break
+            print("Selected next face",next_face_id)
             self.cover_face(next_face_id, thresholds)
         
         
         thresholds = [0, 1.5, 1000, 500]
         
-        sched = Face_Schedular(self.config, self.psql_conn)
+        sched = Face_Scheduler(self.config, self.psql_conn)
         while True:
             next_face_id = sched.next_face()
             if next_face_id == None:
@@ -222,6 +228,7 @@ class Snap_Fit:
         self.finalize_outputs()
     
 if __name__ == "__main__":    
+    from helper_classes import *
     parser = argparse.ArgumentParser(description="Description for my parser")
 
     parser.add_argument("-v", "--village", help="Village name",
@@ -234,3 +241,5 @@ if __name__ == "__main__":
     sf = snap_fit(village)
     sf.run()
 
+else:
+    from .helper_classes import *

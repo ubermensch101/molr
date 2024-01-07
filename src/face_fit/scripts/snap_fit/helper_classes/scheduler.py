@@ -1,6 +1,6 @@
 from queue import PriorityQueue
 
-class Face_Schedular:
+class Face_Scheduler:
     def __init__(self, config, psql_conn):
         self.config = config
         self.psql_conn = psql_conn
