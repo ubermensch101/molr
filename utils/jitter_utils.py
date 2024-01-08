@@ -1,3 +1,4 @@
+import numpy as np
 from scipy.optimize import minimize
 
 def jitter_fit(psql_conn, schema, input, output, reference, option, bounds):
@@ -8,7 +9,7 @@ def jitter_fit(psql_conn, schema, input, output, reference, option, bounds):
         fit_with_excess_area(psql_conn, schema, input, output, reference, temp, bounds)
     elif option == 1:
         fit_with_excess_area_at_boundary(psql_conn, schema, input, output, reference, temp, bounds)
-
+    
     print("Excess_Area :-", excess_area_without_parameters(psql_conn, schema ,output,reference),
               "Distortion :-", get_distortion(psql_conn, schema, output, input))
     
@@ -32,6 +33,13 @@ def fit_with_excess_area_at_boundary(psql_conn, schema, input, output, reference
     update_scale(psql_conn, schema, output, temp, result.x[1], result.x[2])
     update_translation(psql_conn, schema, temp, output, result.x[3], result.x[4])
 
+
+def fit_with_area_outside(psql_conn, schema, input, output, reference, temp, bounds):
+    create_union(psql_conn, schema, input, input+"_union")
+    result = minimize(excess_area_at_boundary, [0, 0], args=(psql_conn, schema, input+"_union", reference, temp),bounds=bounds)
+    print(f"Resulting Transformation Parameters: {result.x}")
+    update_translation(psql_conn, schema, temp, output, result.x[0], result.x[1])
+    return result
 
 def create_union(psql_conn, schema, input, output):
     sql = f'''
@@ -279,3 +287,48 @@ def get_distortion(psql_conn, schema, input, reference, ref_schema= None):
         curr.execute(sql)
         std_dev = curr.fetchall()
     return std_dev[0][0]
+
+
+def area_outside(parameters, pgconn, schema, input_table,  reference_table, temporary_table, ref_schema= None):
+    if ref_schema is None:
+        ref_schema = schema
+    sql_query = f'''
+        drop table if exists {schema}.{temporary_table};
+        create table {schema}.{temporary_table} as
+        with 
+        center as (
+            select st_centroid(
+                st_MakePolygon(
+                    st_exteriorRing(
+                        st_union(geom)
+                    )
+                )
+            ) as geom from {schema}.{input_table}
+        ),
+        
+        select st_translate(geom, {parameters[0]}, {parameters[1]}) as geom from scaled;
+    '''
+
+    with pgconn.connection().cursor() as curs:
+        curs.execute(sql_query)
+
+    sql_query = f"""
+        select
+            st_area(st_difference(temp.geom, void.geom)) as area_diff
+        from
+            {schema}.{temporary_table} temp,
+            {ref_schema}.{reference_table} void
+        ;
+    """
+
+    with pgconn.cursor() as curs:
+        curs.execute(sql_query)
+        area_diff = curs.fetchone()[0]
+    
+    distance = np.sqrt(parameters[3]**2 + parameters[4]**2)
+
+    loss = area_diff + distance**2
+    
+    print(area_diff, loss)
+    
+    return loss

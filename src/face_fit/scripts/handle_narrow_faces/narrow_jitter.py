@@ -107,6 +107,47 @@ class Narrow_Jitter:
             with self.psql_conn.connection().cursor() as curr:
                 curr.execute(sql)
             
+            temp_face_nodes_table = self.config.setup_details['fbfs']['temp_nodes_table']
+            temp_updated_face_nodes_table = self.config.setup_details['fbfs']['temp_updated_nodes_table']
+            temp_face_table = self.config.setup_details['fbfs']['temp_face_table']
+            get_nodes_geom(self.psql_conn, schema, self.topo, temp_face_nodes_table, self.face_node_map, self.covered_nodes, face_id )
+            sql = f'''
+                select 
+                    count(node_id),
+                    count(case when shifted_geom = NULL THEN 1 end) 
+                from {schema}.{temp_face_nodes_table};
+            '''
+            with self.psql_conn.connection.cursor() as curr:
+                curr.execute(sql)
+                counts = curr.fetchall()
+            if counts[0][0] == counts[0][1]:
+                temp = "temp"
+                results = fit_with_area_outside(self.psql_conn, schema, cur_face_table, temp_face_table, cur_void_table, temp, ((-80, 80), (-80, 80)))
+                sql = f'''
+                    drop table if exists {schema}.{temp_updated_face_nodes_table};
+                    create table {schema}.{temp_updated_face_nodes_table} as
+            
+                    select
+                        n.node_id as node_id,
+                        case
+                            when n.shifted_geom is null 
+                            then st_translate( n.original_geom, {results.x[0]}, {results.x[1]} )
+                            else n.shifted_geom
+                        end as geom
+                    from
+                    {schema}.{temp_face_nodes_table} as n;
+                '''
+                with self.psql_conn.connection().cursor() as curr:
+                    curr.execute(sql)
+            else:
+                average_translate_face_nodes(self.psql_conn, self.village, self.topo, face_id, self.face_node_map, self.covered_nodes, temp_updated_face_nodes_table, temp_face_nodes_table )
+            get_face(self.psql_conn, self.topo, face_id, schema, temp_face_table, temp_updated_face_nodes_table)
+            validity = check_face_valid(self.psql_conn, face_id, schema, temp_face_table, 
+                             self.covered_faces, self.covered_edges)
+            if not validity:
+                continue
+            commit_face(self.psql_conn, self.topo, schema, self.covered_nodes, self.covered_edges, self.covered_faces, face_id, temp_face_table, temp_updated_face_nodes_table )    
+            
             # NOT COMPLETE
             
     
